@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('客服专员')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'archives/custspc/qryForPage',
+            fit : true,
+            toolbar : '.dgtoolbar',
+            onSelect : function(i, r) {
+                $("#editBnt, #relCustBnt").linkbutton('enable');
+            },
+            onLoadSuccess : function(i, r) {
+                $("#editBnt, #relCustBnt").linkbutton('disable');
+            }
+        });
+
+        $('#dg-1').datagrid({
+            height : 400,
+            singleSelect : false,
+            pagination : false
+        });
+
+        $('#dg-1-1').datagrid({
+            height : 400,
+            singleSelect : false
+        });
+    });
+
+    function add() {
+        $('#ww').editFormDialog({
+            title : '客服专员-新建',
+            dg : 'dg',
+            bnts : [ {
+                url : 'archives/custspc/add'
+            } ]
+        });
+    }
+
+    function edit() {
+        var std = $('#dg').datagrid("getSelected");
+        $('#frm').form('load', std);
+        $('#ww').editFormDialog({
+            title : '客服专员-编辑',
+            dg : 'dg',
+            bnts : [ {
+                url : 'archives/custspc/update'
+            } ]
+        });
+    }
+
+    function doSearch(v) {
+        $('#dg').datagrid({
+            queryParams : {
+                custServName : v
+            }
+        });
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    var g_custServCode = null;
+
+    // 关联客户
+    function relCust(roleType) {
+        g_custServCode = $('#dg').datagrid("getSelected").custServCode;
+
+        $("#dg-1").datagrid({
+            url : 'archives/custspc/qryRelUser',
+            pagination : false,
+            queryParams : {
+                custServCode : g_custServCode
+            }
+        });
+        $('#ww-1').dialog({
+            title : "关联客户"
+        }).dialog('center').dialog('open');
+    }
+
+    function addRelUserPage() {
+        $("#dg-1-1").datagrid({
+            url : 'archives/custspc/qryUnRelUser',
+            queryParams : {
+                codeName : $('#codeName').searchbox("getValue")
+            }
+        });
+        $('#ww-1-1').dialog({
+            title : "关联客户-选择"
+        }).dialog('center').dialog('open');
+    }
+
+    // 过滤
+    function qryUnRelUser(v) {
+        $('#dg-1-1').datagrid({
+            queryParams : {
+                codeName : v
+            }
+        });
+    }
+
+    // 新建：关联客户
+    function addRelUser() {
+        var userCodes = [];
+        var rows = $('#dg-1-1').datagrid('getSelections');
+        if (rows.length == 0) {
+            tipSelRecord();
+            return;
+        } else {
+            for (var i = 0; i < rows.length; i++) {
+                userCodes.push(rows[i].userCode);
+            }
+        }
+        $.post('archives/custspc/addRelUser', {
+            custServCode : g_custServCode,
+            userCodes : userCodes.join(",")
+        }, function(rs) {
+            $("#dg-1-1").datagrid("reload");
+            $("#dg-1").datagrid("reload");
+            tipSuccess();
+        });
+    }
+
+    // 删除：关联客户
+    function deleteRelUser() {
+        var userCodes = [];
+        var rows = $('#dg-1').datagrid('getSelections');
+        if (rows.length == 0) {
+            tipSelRecord();
+            return;
+        } else {
+            for (var i = 0; i < rows.length; i++) {
+                userCodes.push(rows[i].userCode);
+            }
+        }
+        $.post('archives/custspc/deleteRelUser', {
+            custServCode : g_custServCode,
+            userCodes : userCodes.join(",")
+        }, function(rs) {
+            $("#dg-1").datagrid("reload");
+            tipSuccess();
+        });
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<shiro:hasPermission name="custspc:add">
+			<a class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="add()">新建</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="custspc:update">
+			<a id="editBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="edit()">编辑</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="custspc:addRelUser">
+			<a id="relCustBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="relCust()">关联客户</a>
+		</shiro:hasPermission>
+		<div>
+			<input class="easyui-searchbox" data-options="searcher:doSearch,prompt:'客服专员账号、名称'">
+		</div>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'custServCode',width:'20%'">客服专员账号</th>
+				<th data-options="field:'custServName',width:'40%'">客服专员名称</th>
+				<th data-options="field:'linkEmail',width:'25%'">联系人邮箱</th>
+				<th data-options="field:'isValid',width:'15%',formatter:yesOrNoRender">是否有效</th>
+			</tr>
+		</thead>
+	</table>
+
+	<div id="ww" class="easyui-dialog dlgForm1" data-options="height:250,closed:true">
+		<form id="frm" method="post">
+			<input type="hidden" name="custServCode">
+			<table>
+				<tr>
+					<td>名称</td>
+					<td>
+						<input class="easyui-textbox" name="custServName" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>联系人邮箱</td>
+					<td>
+						<input class="easyui-textbox" name="linkEmail" data-options="required:true,validType:'email'">
+					</td>
+				</tr>
+				<tr>
+					<td>是否有效</td>
+					<td>
+						<input class="easyui-combobox" name="isValid" value="1" data-options="url:'console/sys/dict/selDict/9000',panelHeight:'auto'">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+	<!-- 关联客户 -->
+	<div id="ww-1" class="easyui-dialog dlglist1" data-options="closed:true">
+		<table class="bntTable">
+			<tr>
+				<td style="text-align: left;">
+					<a class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="addRelUserPage()">新建</a>
+					<a class="easyui-linkbutton" data-options="iconCls:'icon-remove'" onclick="deleteRelUser()">删除</a>
+				</td>
+			</tr>
+		</table>
+		<table id="dg-1">
+			<thead>
+				<tr>
+					<th data-options="field:'ck',checkbox:true" />
+					<th data-options="field:'userCode',width:'15%'">账号</th>
+					<th data-options="field:'name',width:'80%'">名称</th>
+				</tr>
+			</thead>
+		</table>
+	</div>
+
+	<!-- 选择框 -->
+	<div id="ww-1-1" class="easyui-dialog dlglist2" data-options="closed:true">
+		<table class="bntTable">
+			<tr>
+				<td style="text-align: left;">
+					<a class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="addRelUser()">保存</a>
+				</td>
+				<td style="text-align: right;">
+					<input id="codeName" class="easyui-searchbox" data-options="searcher:qryUnRelUser,prompt:'账号、名称'">
+				</td>
+			</tr>
+		</table>
+		<table id="dg-1-1">
+			<thead>
+				<tr>
+					<th data-options="field:'ck',checkbox:true" />
+					<th data-options="field:'userCode',width:'15%'">账号</th>
+					<th data-options="field:'name',width:'80%'">名称</th>
+				</tr>
+			</thead>
+		</table>
+	</div>
+</body>
+</html>

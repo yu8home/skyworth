@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('权限管理')" />
+<script type="text/javascript">
+    $(function() {
+        $('#wt').tree({
+            url : 'console/sys/menu/qryMenuTreeGrid',
+            animate : true,
+            onClick : function(node) {
+                if (node.isLeaf) {
+                    $('#dg').datagrid({
+                        url : 'console/sys/authority/qryForList?menuId=' + node.menuId
+                    });
+                }
+            },
+            onLoadSuccess : function(i, r) {
+                $("#addBnt, #editBnt, #delBnt, #authBnt").linkbutton('disable');
+            }
+        });
+
+        $('#dg').datagrid({
+            animate : true,
+            idField : 'menuId',
+            treeField : 'text',
+            fit : true,
+            onSelect : function(i, r) {
+                $("#editBnt, #delBnt, #authBnt").linkbutton('enable');
+            },
+            onLoadSuccess : function(i, r) {
+                $("#editBnt, #delBnt, #authBnt").linkbutton('disable');
+            }
+        });
+        appendDictCheckbox($("fieldset"), "roleTypes", "9002", "A");
+    });
+
+    function add() {
+        var std = $('#wt').tree('getSelected');
+        if (!std || !std.isLeaf) {
+            $.messager.show({
+                msg : '请选择左侧菜单树的叶子节点！'
+            });
+            return;
+        }
+        $('input[name=menuId]').val(std.menuId);
+        $('#ww').editFormDialog({
+            title : '权限管理-新建',
+            dg : 'dg',
+            bnts : [ {
+                url : 'console/sys/authority/add'
+            } ]
+        });
+    }
+
+    function edit() {
+        var std = $('#dg').datagrid("getSelected");
+        if (!std.roleTypes) {
+            return;
+        }
+        std.roleTypes = std.roleTypes.split(","); // 回填roleTypes
+        $('#frm').form('load', std);
+        $('#ww').editFormDialog({
+            title : '权限管理-编辑',
+            dg : 'dg',
+            bnts : [ {
+                url : 'console/sys/authority/update'
+            } ]
+        });
+    }
+
+    function deleted() {
+        $.messager.confirm('提示', '是否确认“删除”？', function(r) {
+            if (r) {
+                $.post('console/sys/authority/delete', {
+                    authId : $('#dg').datagrid("getSelected").authId
+                }, function(rs) {
+                    tipSuccess();
+                    $('#dg').datagrid('reload');
+                });
+            }
+        });
+    }
+
+    function authorized() {
+        $("#dg-1").datagrid({
+            url : 'console/sys/authority/qryAuthRec',
+            queryParams : {
+                authId : $('#dg').datagrid("getSelected").authId
+            }
+        });
+        $('#ww-1').dialog({
+            title : "授权"
+        }).dialog('center').dialog('open');
+    }
+
+    function authRecPage() {
+        $("#dg-1-1").datagrid({
+            url : 'console/sys/authority/qryUnAuthRec',
+            queryParams : {
+                authId : $('#dg').datagrid("getSelected").authId,
+                url : $('#url').searchbox("getValue")
+            }
+        });
+        $('#ww-1-1').dialog({
+            title : "资源-选择"
+        }).dialog('center').dialog('open');
+    }
+
+    // 过滤
+    function qryUnAuthRec(v) {
+        var std = $('#dg').datagrid("getSelected");
+        $('#dg-1-1').datagrid({
+            queryParams : {
+                authId : std.authId,
+                url : v
+            }
+        });
+    }
+
+    // 新建：资源
+    function addAuthRec() {
+        var authId = $('#dg').datagrid("getSelected").authId;
+        var resourceIds = [];
+        var rows = $('#dg-1-1').datagrid('getSelections');
+        if (rows.length == 0) {
+            tipSelRecord();
+            return;
+        } else {
+            for (var i = 0; i < rows.length; i++) {
+                resourceIds.push(rows[i].resourceId);
+            }
+        }
+        $.post('console/sys/authority/addAuthRec', {
+            authId : authId,
+            resourceIds : resourceIds.join(",")
+        }, function(rs) {
+            $("#dg-1-1").datagrid("reload");
+            $("#dg-1").datagrid("reload");
+            tipSuccess();
+        });
+    }
+
+    // 删除：资源
+    function deleteAuthRec() {
+        var authId = $('#dg').datagrid("getSelected").authId;
+        var resourceIds = [];
+        var rows = $('#dg-1').datagrid('getSelections');
+        if (rows.length == 0) {
+            tipSelRecord();
+            return;
+        } else {
+            for (var i = 0; i < rows.length; i++) {
+                resourceIds.push(rows[i].resourceId);
+            }
+        }
+        $.post('console/sys/authority/deleteAuthRec', {
+            authId : authId,
+            resourceIds : resourceIds.join(",")
+        }, function(rs) {
+            $("#dg-1").datagrid("reload");
+            tipSuccess();
+        });
+    }
+</script>
+
+<body class="easyui-layout">
+	<div data-options="region:'west',split:true" style="width: 300px;">
+		<ul id="wt"></ul>
+	</div>
+	<div data-options="region:'center',border:false">
+		<div class="dgtoolbar">
+			<a class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="add()">新建</a>
+			<a id="editBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="edit()">编辑</a>
+			<a id="delBnt" class="easyui-linkbutton" data-options="iconCls:'icon-remove'" onclick="deleted()">删除</a>
+			<a id="authBnt" class="easyui-linkbutton" data-options="iconCls:'icon-ok'" onclick="authorized()">授权</a>
+		</div>
+		<table id="dg">
+			<thead>
+				<tr>
+					<th data-options="field:'authId',hidden:true" />
+					<th data-options="field:'authName',width:'25%'">权限名称</th>
+					<th data-options="field:'isValid',width:'15%',formatter:yesOrNoRender">是否有效</th>
+					<th data-options="field:'orderNo',width:'15%'">排序</th>
+					<th data-options="field:'roleTypesName',width:'45%'">授权类型</th>
+				</tr>
+			</thead>
+		</table>
+	</div>
+
+	<!-- 编辑框 -->
+	<div id="ww" class="easyui-dialog dlgForm1" data-options="height:300,closed:true">
+		<form id="frm" method="post">
+			<input type="hidden" name="authId">
+			<input type="hidden" name="menuId">
+			<table>
+				<tr>
+					<td>权限名称</td>
+					<td>
+						<input class="easyui-textbox" name="authName" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>排序</td>
+					<td>
+						<input class="easyui-numberspinner" name="orderNo" data-options="required:true,min:1,max:99">
+					</td>
+				</tr>
+				<tr>
+					<td>是否有效</td>
+					<td>
+						<input class="easyui-combobox" name="isValid" value="1" data-options="url:'console/sys/dict/selDict/9000',panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2" style="height: 40px;">
+						<fieldset>
+							<legend>授权类型</legend>
+						</fieldset>
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+	<!-- 授权列表 -->
+	<div id="ww-1" class="easyui-dialog dlglist1" data-options="closed:true">
+		<table class="bntTable">
+			<tr>
+				<td style="text-align: left;">
+					<a class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="authRecPage()">新建</a>
+					<a class="easyui-linkbutton" data-options="iconCls:'icon-remove'" onclick="deleteAuthRec()">删除</a>
+				</td>
+			</tr>
+		</table>
+		<table id="dg-1" class="easyui-datagrid" data-options="height:420,singleSelect:false,pagination:false">
+			<thead>
+				<tr>
+					<th data-options="field:'ck',checkbox:true" />
+					<th data-options="field:'resourceId',hidden:true" />
+					<th data-options="field:'url',width:'95%'">URL</th>
+				</tr>
+			</thead>
+		</table>
+	</div>
+
+	<!-- 选择框 -->
+	<div id="ww-1-1" class="easyui-dialog dlglist1" data-options="closed:true">
+		<table class="bntTable">
+			<tr>
+				<td style="text-align: left;">
+					<a class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="addAuthRec()">保存</a>
+				</td>
+				<td style="text-align: right;">
+					<input id="url" class="easyui-searchbox" style="width: 250px;" data-options="searcher:qryUnAuthRec,prompt:'URL'">
+				</td>
+			</tr>
+		</table>
+		<table id="dg-1-1" class="easyui-datagrid" data-options="height:420,singleSelect:false">
+			<thead>
+				<tr>
+					<th data-options="field:'ck',checkbox:true" />
+					<th data-options="field:'resourceId',hidden:true" />
+					<th data-options="field:'url',width:'95%'">URL</th>
+				</tr>
+			</thead>
+		</table>
+	</div>
+</body>
+</html>

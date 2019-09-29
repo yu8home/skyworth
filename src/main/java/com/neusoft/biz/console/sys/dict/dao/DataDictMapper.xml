@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.console.sys.dict.dao.DataDictMapper">
+
+	<sql id="Base_Column_List">
+		<![CDATA[
+            select t.dict_id,
+                   t.dict_code,
+                   t.text,
+                   t.value,
+                   t.pid,
+                   t.order_no,
+                   t.remark,
+                   t.is_valid
+              from s_data_dict t
+        ]]>
+	</sql>
+
+	<select id="qryForList" resultType="dataDict">
+		<include refid="Base_Column_List" />
+		<where>
+			<if test="isValid != null">
+				and t.is_valid = #{isValid}
+			</if>
+			<if test="remark != null and remark != ''">
+				and (cast(t.dict_code as char) = #{remark} or t.text = #{remark} or t.remark like concat('%', #{remark}, '%'))
+			</if>
+		</where>
+		order by t.dict_code, t.order_no
+	</select>
+
+	<select id="getInfo" resultType="dataDict">
+		<include refid="Base_Column_List" />
+		where t.dict_id = #{dictId}
+	</select>
+
+	<insert id="insert">
+		<![CDATA[
+            insert into s_data_dict
+              (dict_code, text, value, pid, order_no, remark, is_valid)
+            values
+              (#{dictCode},
+               #{text},
+               #{value},
+               #{pid},
+               #{orderNo},
+               #{remark},
+               #{isValid})
+        ]]>
+	</insert>
+
+	<update id="update">
+		<![CDATA[
+            update s_data_dict
+               set dict_code = #{dictCode},
+                   text      = #{text},
+                   value     = #{value},
+                   pid       = #{pid},
+                   order_no  = #{orderNo},
+                   remark    = #{remark},
+                   is_valid  = #{isValid}
+             where dict_id = #{dictId}
+        ]]>
+	</update>
+
+</mapper>

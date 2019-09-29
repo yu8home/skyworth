@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('客诉总数')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'report/qryCustCptTotal',
+            queryParams : $('.dgtoolbar form').serializeForm(),
+            fit : true,
+            toolbar : '.dgtoolbar'
+        });
+    });
+
+    function doSearch() {
+        $('#dg').datagrid({
+            queryParams : $('.dgtoolbar form').serializeForm()
+        });
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<form>
+			客服是否有效
+			<input class="easyui-combobox" name="isValid" value="1" data-options="url:'console/sys/dict/selectDict/9000',panelHeight:'auto'">
+			&nbsp;&nbsp;&nbsp;&nbsp;
+			<a class="easyui-linkbutton" data-options="iconCls:'icon-search'" onclick="doSearch()">查询</a>
+		</form>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'cust_serv_name',width:'30%'">客服专员</th>
+				<th data-options="field:'feedback_cs_time',width:'35%'">月份</th>
+				<th data-options="field:'cnt',width:'35%'">客诉数量</th>
+			</tr>
+		</thead>
+	</table>
+</body>
+</html>

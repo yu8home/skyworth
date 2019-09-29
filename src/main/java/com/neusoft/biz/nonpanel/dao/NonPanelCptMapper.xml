@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.nonpanel.dao.NonPanelCptMapper">
+
+
+    <sql id="Base_Column_List">
+		<![CDATA[
+            select t.non_panel_cpt_id,
+                   t.complaint_no,
+                   t.order_no,
+                   t.receive_time,
+                   t.src,
+                   t.cs,
+                   t.component_editing,
+                   t.part_order_qty,
+                   t.number_of_complaints,
+                   t.non_performing_rate,
+                   t.bad_phase,
+                   t.rma_failure_type,
+                   t.non_rma_failure_type,
+                   t.fault_remark,
+                   t.part_name,
+                   t.component_name,
+                   t.initial_type,
+                   date_format(t.initial_response_time, '%Y-%m-%d %H:%i') as initial_response_time,
+                   t.temporary_measure_type,
+                   t.temporary_measures_remark,
+                   t.reserve_loss_order,
+                   t.reserve_loss_amount,
+                   t.damage_loss_shipping,
+                   t.tracking_number,
+                   t.repair_fees,
+                   t.compensation_fee,
+                   t.confirmation_solution,
+                   date_format(t.confirm_solution_time, '%Y-%m-%d %H:%i') as confirm_solution_time,
+                   date_format(t.quality_file_feedback_time, '%Y-%m-%d %H:%i') as quality_file_feedback_time,
+                   t.quality_doc_recipient,
+                   date_format(t.report_receiving_time, '%Y-%m-%d %H:%i') as report_receiving_time,
+                   date_format(t.report_forwarding_time, '%Y-%m-%d %H:%i') as report_forwarding_time,
+                   date_format(t.technical_responded_time, '%Y-%m-%d %H:%i') as technical_responded_time,
+                   date_format(t.report_responds_time, '%Y-%m-%d %H:%i') as report_responds_time,
+                   t.closed_remark,
+                   date_format(t.closed_time, '%Y-%m-%d %H:%i') as closed_time,
+                   t.primary_todo_type,
+                   date_format(t.estimated_finish_time, '%Y-%m-%d %H:%i') as estimated_finish_time,
+                   t.create_user_id,
+                   (select x.name from s_user x where x.user_id = t.create_user_id) as create_user_name,
+                   date_format(t.create_time, '%Y-%m-%d %H:%i') as create_time,
+                   t.mod_user_id,
+                   (select x.name from s_user x where x.user_id = t.mod_user_id) as mod_user_name,
+                   date_format(t.mod_time, '%Y-%m-%d %H:%i') as mod_time,
+
+                   f.sold_to_country,
+                   f.cust_name,
+                   f.brand,
+                   f.delivery_form,
+                   f.our_model,
+                   f.cust_model,
+                   f.movement,
+                   f.order_qty
+              from d_non_panel_cpt t, d_order f
+             where t.order_no = f.order_no
+        ]]>
+	</sql>
+
+    <select id="qryForList" resultType="nonPanelCpt">
+        <include refid="Base_Column_List"/>
+        <if test="complaintNo != null and complaintNo != ''">and t.complaint_no like concat('%', #{complaintNo}, '%')</if>
+        <if test="badPhase != null and badPhase != ''">and t.bad_phase = #{badPhase}</if>
+        <if test="receiveTimeStart != null and receiveTimeStart != ''">and t.create_time &gt;= str_to_date(concat(#{receiveTimeStart}, ' 00:00:00'), '%Y-%m-%d %H:%i')</if>
+        <if test="receiveTimeEnd != null and receiveTimeEnd != ''">and t.create_time &lt;= str_to_date(concat(#{receiveTimeEnd}, ' 23:59'), '%Y-%m-%d %H:%i')</if>
+        <if test="closedTimeStart != null and closedTimeStart != ''">and t.create_time &gt;= str_to_date(concat(#{closedTimeStart}, ' 00:00:00'), '%Y-%m-%d %H:%i')</if>
+        <if test="closedTimeEnd != null and closedTimeEnd != ''">and t.create_time &lt;= str_to_date(concat(#{closedTimeEnd}, ' 23:59'), '%Y-%m-%d %H:%i')</if>
+        <if test="rmaFailureType != null and rmaFailureType != ''">and t.rma_failure_type = #{rmaFailureType}</if>
+        <if test="nonRmaFailureType != null and nonRmaFailureType != ''">and t.non_rma_failure_type = #{nonRmaFailureType}</if>
+        <if test="initialType != null and initialType != ''">and t.initial_type = #{initialType}</if>
+        <if test="temporaryMeasureType != null and temporaryMeasureType != ''">and t.temporary_measure_type = #{temporaryMeasureType}</if>
+        <if test="confirmationSolution != null and confirmationSolution != ''">and t.confirmation_solution = #{confirmationSolution}</if>
+        <if test="partName != null and partName != ''">and t.part_name = #{partName}</if>
+        <if test="componentEditing != null and componentEditing != ''">and t.component_editing like concat('%', #{componentEditing}, '%')</if>
+        <if test="orderNo != null and orderNo != ''">and f.order_no like concat('%', #{orderNo}, '%')</if>
+        <if test="reserveLossOrder != null and reserveLossOrder != ''">and t.reserve_loss_order like concat('%', #{reserveLossOrder}, '%')</if>
+        <if test="deliveryForm != null and deliveryForm != ''">and f.delivery_form like concat('%', #{deliveryForm}, '%')</if>
+        <if test="ourModel != null and ourModel != ''">and f.our_model like concat('%', #{ourModel}, '%')</if>
+        <if test="custModel != null and custModel != ''">and f.cust_model like concat('%', #{custModel}, '%')</if>
+        <if test="custName != null and custName != ''">and f.cust_name like concat('%', #{custName}, '%')</if>
+        <if test="movement != null and movement != ''">and f.movement like concat('%', #{movement}, '%')</if>
+        <if test="brand != null and brand != ''">and f.brand like concat('%', #{brand}, '%')</if>
+        <if test="soldToCountry != null and soldToCountry != ''">and f.sold_to_country like concat('%', #{soldToCountry}, '%')</if>
+        order by t.non_panel_cpt_id desc
+    </select>
+
+    <select id="getInfo" resultType="nonPanelCpt">
+        <include refid="Base_Column_List"/>
+        and t.non_panel_cpt_id = #{nonPanelCptId}
+    </select>
+
+    <insert id="insert">
+		<![CDATA[
+            insert into d_non_panel_cpt
+              (complaint_no,
+               order_no,
+               receive_time,
+               src,
+               cs,
+               component_editing,
+               part_order_qty,
+               number_of_complaints,
+               non_performing_rate,
+               bad_phase,
+               rma_failure_type,
+               non_rma_failure_type,
+               fault_remark,
+               part_name,
+               component_name,
+               initial_type,
+               initial_response_time,
+               temporary_measure_type,
+               temporary_measures_remark,
+               reserve_loss_order,
+               reserve_loss_amount,
+               damage_loss_shipping,
+               tracking_number,
+               repair_fees,
+               compensation_fee,
+               confirmation_solution,
+               confirm_solution_time,
+               quality_file_feedback_time,
+               quality_doc_recipient,
+               report_receiving_time,
+               report_forwarding_time,
+               technical_responded_time,
+               report_responds_time,
+               closed_remark,
+               closed_time,
+               primary_todo_type,
+               estimated_finish_time,
+               create_user_id)
+            values
+              (#{complaintNo},
+               #{orderNo},
+               #{receiveTime},
+               #{src},
+               #{cs},
+               #{componentEditing},
+               #{partOrderQty},
+               #{numberOfComplaints},
+               format((#{numberOfComplaints} / #{partOrderQty}) * 100, 2),
+               #{badPhase},
+               #{rmaFailureType},
+               #{nonRmaFailureType},
+               #{faultremark},
+               #{partName},
+               #{componentName},
+               #{initialType},
+               #{initialResponseTime},
+               #{temporaryMeasureType},
+               #{temporaryMeasuresremark},
+               #{reserveLossOrder},
+               #{reserveLossAmount},
+               #{damageLossShipping},
+               #{trackingNumber},
+               #{repairFees},
+               #{compensationFee},
+               #{confirmationSolution},
+               #{confirmSolutionTime},
+               #{qualityFileFeedbackTime},
+               #{qualitydocRecipient},
+               #{reportReceivingTime},
+               #{reportForwardingTime},
+               #{technicalRespondedTime},
+               #{reportRespondsTime},
+               #{closedRemark},
+               #{closedTime},
+               #{primaryToDotype},
+               #{estimatedFinishTime},
+               #{createUserId})
+        ]]>
+	</insert>
+
+    <update id="update">
+		<![CDATA[
+            update d_non_panel_cpt
+               set complaint_no               = #{complaintNo},
+                   order_no                   = #{orderNo},
+                   receive_time               = #{receiveTime},
+                   src                        = #{src},
+                   cs                         = #{cs},
+                   component_editing          = #{componentEditing},
+                   part_order_qty             = #{partOrderQty},
+                   number_of_complaints       = #{numberOfComplaints},
+                   non_performing_rate        = format((#{numberOfComplaints} / #{partOrderQty}) * 100, 2),
+                   bad_phase                  = #{badPhase},
+                   rma_failure_type           = #{rmaFailureType},
+                   non_rma_failure_type       = #{nonRmaFailureType},
+                   fault_remark               = #{faultremark},
+                   part_name                  = #{partName},
+                   component_name             = #{componentName},
+                   initial_type               = #{initialType},
+                   initial_response_time      = #{initialResponseTime},
+                   temporary_measure_type     = #{temporaryMeasureType},
+                   temporary_measures_remark  = #{temporaryMeasuresremark},
+                   reserve_loss_order         = #{reserveLossOrder},
+                   reserve_loss_amount        = #{reserveLossAmount},
+                   damage_loss_shipping       = #{damageLossShipping},
+                   tracking_number            = #{trackingNumber},
+                   repair_fees                = #{repairFees},
+                   compensation_fee           = #{compensationFee},
+                   confirmation_solution      = #{confirmationSolution},
+                   confirm_solution_time      = #{confirmSolutionTime},
+                   quality_file_feedback_time = #{qualityFileFeedbackTime},
+                   quality_doc_recipient      = #{qualitydocRecipient},
+                   report_receiving_time      = #{reportReceivingTime},
+                   report_forwarding_time     = #{reportForwardingTime},
+                   technical_responded_time   = #{technicalRespondedTime},
+                   report_responds_time       = #{reportRespondsTime},
+                   closed_remark              = #{closedRemark},
+                   closed_time                = #{closedTime},
+                   primary_todo_type          = #{primaryToDotype},
+                   estimated_finish_time      = #{estimatedFinishTime},
+                   mod_user_id                = #{modUserId},
+                   mod_time                   = now()
+             where non_panel_cpt_id = #{nonPanelCptId}
+        ]]>
+	</update>
+
+</mapper>

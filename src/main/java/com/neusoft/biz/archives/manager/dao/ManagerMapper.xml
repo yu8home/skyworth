@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.archives.manager.dao.ManagerMapper">
+
+    <sql id="Base_Column_List">
+		select t.manager_code, t.manager_name, t.is_valid from b_manager t
+	</sql>
+
+    <select id="qryForList" resultType="manager">
+        <include refid="Base_Column_List"/>
+        order by t.manager_code desc
+    </select>
+
+    <select id="getInfo" resultType="manager">
+        <include refid="Base_Column_List"/>
+        where t.manager_code = #{managerCode}
+    </select>
+
+    <insert id="insert">
+		insert into b_manager (manager_code, manager_name, is_valid) values (#{managerCode}, #{managerName}, #{isValid})
+	</insert>
+
+    <update id="update">
+		update b_manager set manager_name = #{managerName}, is_valid = #{isValid} where manager_code = #{managerCode};
+		update s_user t set t.name = #{managerName}, t.is_valid = #{isValid} where t.user_code = #{managerCode};
+	</update>
+
+</mapper>

@@ -1,0 +1,554 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.panel.form.dao.FormMapper">
+
+	<sql id="List_Condition">
+		<!-- 菜单类型 -->
+		<choose>
+			<!-- 客户 -->
+			<when test='formMenuType == 1'>
+				<choose>
+					<when test="status != null">
+						and t.status = #{status}
+					</when>
+					<otherwise>
+						and t.status != 11
+					</otherwise>
+				</choose>
+			</when>
+			<!-- 客服vs客户 -->
+			<when test='formMenuType == 2'>
+				<choose>
+					<when test="status != null">
+						and t.status = #{status}
+					</when>
+					<otherwise>
+						and t.status not in (1,11)
+					</otherwise>
+				</choose>
+			</when>
+			<!-- 客服vs供应商 -->
+			<when test='formMenuType == 3'>
+				<choose>
+					<when test="vendorFormStatus != null">
+						and t.vendor_form_status = #{vendorFormStatus}
+					</when>
+					<otherwise>
+						and t.vendor_form_status in (1,2,3,4)
+					</otherwise>
+				</choose>
+			</when>
+			<!-- 供应商 -->
+			<when test='formMenuType == 4'>
+				<choose>
+					<when test="vendorFormStatus != null">
+						and t.vendor_form_status = #{vendorFormStatus}
+					</when>
+					<otherwise>
+						and t.vendor_form_status in (1,2,3,4)
+					</otherwise>
+				</choose>
+			</when>
+			<!-- 客户工单历史 -->
+			<when test='formMenuType == 5'>
+				and t.status = 11
+			</when>
+			<!-- 客服工单历史 -->
+			<when test='formMenuType == 6'>
+				and t.status = 11
+				and (t.vendor_form_status is null or t.vendor_form_status = 5)
+			</when>
+			<!-- 供应商工单历史 -->
+			<when test='formMenuType == 7'>
+				and t.vendor_form_status = 5
+			</when>
+		</choose>
+		<!-- 根据角色判断用户可见数据 -->
+		<choose>
+			<when test='roleType == "C"'>
+				and t.create_user_id = #{createUserId}
+			</when>
+			<when test='roleType == "S"'>
+				and t.create_user_id != 1
+			</when>
+			<when test='roleType == "CS"'>
+				and x.cust_serv_code = #{csCode}
+			</when>
+		</choose>
+		<if test="vendorCode != null and vendorCode != ''">and t.vendor_code = #{vendorCode}</if>
+		<if test="csCodeName != null and csCodeName != ''">and y.cust_serv_name like concat('%', #{csCodeName}, '%')</if>
+
+		<if test="vendorFormStatus != null and vendorFormStatus != ''">and t.vendor_form_status = #{vendorFormStatus}</if>
+		<if test="curInitialType != null and curInitialType != ''">and t.cur_initial_type = #{curInitialType}</if>
+		<if test="solutionType != null and solutionType != ''">and t.solution_type = #{solutionType}</if>
+		<if test="complaintNo != null and complaintNo != ''">and t.complaint_no like concat('%', #{complaintNo}, '%')</if>
+		<if test="custComplaintNo != null and custComplaintNo != ''">and t.cust_complaint_no like concat('%', #{custComplaintNo}, '%')</if>
+		<if test="badPhase != null and badPhase != ''">and t.bad_phase = #{badPhase}</if>
+		<if test="failureType != null and failureType != ''">and t.failure_type = #{failureType}</if>
+		<if test="partName != null and partName != ''">and t.part_name = #{partName}</if>
+		<if test="panelModuleModel != null and panelModuleModel != ''">and t.panel_module_model like concat('%', #{panelModuleModel}, '%')</if>
+		<if test="panelModuleSn != null and panelModuleSn != ''">and t.panel_module_sn like concat('%', #{panelModuleSn}, '%')</if>
+		<if test="ocModel != null and ocModel != ''">and t.oc_model like concat('%', #{ocModel}, '%')</if>
+		<if test="ocSn != null and ocSn != ''">and t.oc_sn like concat('%', #{ocSn}, '%')</if>
+		<if test="orderNo != null and orderNo != ''">and f.order_no like concat('%', #{orderNo}, '%')</if>
+		<if test="screen != null and screen != ''">and f.screen like concat('%', #{screen}, '%')</if>
+		<if test="movementModel != null and movementModel != ''">and f.movement_model like concat('%', #{movementModel}, '%')</if>
+		<if test="movement != null and movement != ''">and f.movement like concat('%', #{movement}, '%')</if>
+		<if test="ourModel != null and ourModel != ''">and f.our_model like concat('%', #{ourModel}, '%')</if>
+		<if test="custModel != null and custModel != ''">and f.cust_model like concat('%', #{custModel}, '%')</if>
+		<if test="deliveryForm != null and deliveryForm != ''">and f.delivery_form like concat('%', #{deliveryForm}, '%')</if>
+		<if test="brand != null and brand != ''">and f.brand like concat('%', #{brand}, '%')</if>
+		<if test="soldToCountry != null and soldToCountry != ''">and f.sold_to_country like concat('%', #{soldToCountry}, '%')</if>
+		<if test="orderType != null and orderType != ''">and f.order_type like concat('%', #{orderType}, '%')</if>
+		<if test="createUserName != null and createUserName != ''">and m.name like concat('%', #{createUserName}, '%')</if>
+		<if test="feedbackCsTimeStart != null and feedbackCsTimeStart != ''">and t.feedback_cs_time &gt;= str_to_date(concat(#{feedbackCsTimeStart}, ' 00:00'), '%Y-%m-%d %H:%i')</if>
+		<if test="feedbackCsTimeEnd != null and feedbackCsTimeEnd != ''">and t.feedback_cs_time &lt;= str_to_date(concat(#{feedbackCsTimeEnd}, ' 23:59'), '%Y-%m-%d %H:%i')</if>
+		<if test="feedbackSupplierTimeStart != null and feedbackSupplierTimeStart != ''">and t.feedback_supplier_time &gt;= str_to_date(concat(#{feedbackSupplierTimeStart}, ' 00:00'), '%Y-%m-%d %H:%i')</if>
+		<if test="feedbackSupplierTimeEnd != null and feedbackSupplierTimeEnd != ''">and t.feedback_supplier_time &lt;= str_to_date(concat(#{feedbackSupplierTimeEnd}, ' 23:59'), '%Y-%m-%d %H:%i')</if>
+		<if test="closeSupplierTimeStart != null and closeSupplierTimeStart != ''">and t.close_supplier_time &gt;= str_to_date(concat(#{closeSupplierTimeStart}, ' 00:00'), '%Y-%m-%d %H:%i')</if>
+		<if test="closeSupplierTimeEnd != null and closeSupplierTimeEnd != ''">and t.close_supplier_time &lt;= str_to_date(concat(#{closeSupplierTimeEnd}, ' 23:59'), '%Y-%m-%d %H:%i')</if>
+		<if test="confirmCloseTimeStart != null and confirmCloseTimeStart != ''">and t.confirm_close_time &gt;= str_to_date(concat(#{confirmCloseTimeStart}, ' 00:00'), '%Y-%m-%d %H:%i')</if>
+		<if test="confirmCloseTimeEnd != null and confirmCloseTimeEnd != ''">and t.confirm_close_time &lt;= str_to_date(concat(#{confirmCloseTimeEnd}, ' 23:59'), '%Y-%m-%d %H:%i')</if>
+		<choose>
+			<when test="status != 11">
+				order by t.priority desc, t.complaint_id desc
+			</when>
+			<otherwise>
+				order by t.complaint_id desc
+			</otherwise>
+		</choose>
+	</sql>
+
+	<select id="qryForList" resultType="form">
+        <![CDATA[
+			select t.complaint_id,
+			       t.complaint_no,
+			       t.cust_complaint_no,
+			       t.vendor_code,
+			       
+			       if(isnull(f.order_no), t.order_no, f.order_no) as order_no,
+			       if(isnull(f.cust_order_no), t.cust_order_no, f.cust_order_no) as cust_order_no,
+			       f.cust_name,
+			       f.screen,
+			       f.our_model,
+			       f.cust_model,
+			       f.movement,
+			       f.sold_to_country,
+			       
+			       t.cbu_sn,
+			       t.bad_phase,
+			       t.failure_type,
+			       t.part_name,
+			       t.panel_module_model,
+			       t.panel_module_sn,
+			       t.oc_model,
+			       t.oc_sn,
+			       t.failure_remark,
+			       t.exchange_test_rs,
+			       t.other_check_rs,
+			       
+			       t.status,
+			       t.vendor_form_status,
+			       get_dict_name(1113, t.vendor_form_status) as vendor_form_status_name,
+			       t.priority,
+			       t.is_temp_save,
+			       
+			       t.cur_initial_type,
+			       t.solution_type,
+			       t.solution_desc,
+			       t.spf_no,
+			       t.spf_value_amount,
+			       date_format(t.es_shipment_date, '%Y-%m-%d') as es_shipment_date,
+			       date_format(t.shipment_date, '%Y-%m-%d') as shipment_date,
+			       date_format(t.list_provide_time, '%Y-%m-%d') as list_provide_time,
+			       t.spf_delivered_type,
+			       t.tracking_no,
+			       t.reim_amount,
+			       date_format(t.reim_app_confirm_time, '%Y-%m-%d') as reim_app_confirm_time,
+			       t.reim_app_scan_file,
+			       date_format(t.first_solution_time, '%Y-%m-%d %H:%i') as first_solution_time,
+			       date_format(t.final_solution_time, '%Y-%m-%d %H:%i') as final_solution_time,
+			       
+			       t.initial_remark,
+			       concat(k.vendor_name, '(', k.vendor_code, ')') as vendorName,
+			       t.create_user_id,
+			       concat(m.name, '(', m.user_code, ')') as create_user_name,
+			       date_format(t.create_time, '%Y-%m-%d %H:%i') as create_time,
+			       date_format(t.mod_time, '%Y-%m-%d %H:%i') as mod_time,
+			       date_format(t.feedback_cs_time, '%Y-%m-%d %H:%i') as feedback_cs_time,
+			       date_format(t.feedback_supplier_time, '%Y-%m-%d %H:%i') as feedback_supplier_time,
+			       date_format(t.close_supplier_time, '%Y-%m-%d %H:%i') as close_supplier_time,
+			       date_format(t.close_time, '%Y-%m-%d %H:%i') as close_time,
+			       date_format(t.confirm_close_time, '%Y-%m-%d %H:%i') as confirm_close_time,
+			       concat(y.cust_serv_name, '(', y.cust_serv_code, ')') as csCodeName
+			  from d_panel_cpt t
+			  left join d_order f
+			    on f.order_id = t.order_id
+			  left join b_vendor k
+			    on k.vendor_code = t.vendor_code
+			  left join s_user m
+			    on m.user_id = t.create_user_id
+			  left join b_cs_2_cust x
+			    on x.user_code = m.user_code
+			  left join b_cs y
+			    on y.cust_serv_code = x.cust_serv_code
+			 where 1 = 1
+		]]>
+		<include refid="List_Condition" />
+	</select>
+
+	<select id="qryForListExcludeImg" resultType="form">
+        <![CDATA[
+			select t.complaint_id,
+			       t.complaint_no,
+			       t.cust_complaint_no,
+			       
+			       if(isnull(f.order_no), t.order_no, f.order_no) as order_no,
+			       if(isnull(f.cust_order_no), t.cust_order_no, f.cust_order_no) as cust_order_no,
+			       f.our_model,
+			       f.cust_model,
+			       f.movement,
+			       f.screen,
+			       f.brand as order_brand,
+			       f.order_qty,
+			       f.cust_name as cust_name,
+			       f.sold_to_country,
+			       f.payment_method,
+			       f.order_date,
+			       f.pid,
+			       f.order_type,
+			       f.delivery_period,
+			       f.delivery_form,
+			       f.inter_trade_terms,
+			       
+			       t.cbu_sn,
+			       t.bad_phase,
+			       t.failure_type,
+			       t.part_name,
+			       t.panel_module_model,
+			       t.panel_module_sn,
+			       t.oc_model,
+			       t.oc_sn,
+			       t.failure_remark,
+			       t.exchange_test_rs,
+			       t.other_check_rs,
+			       
+			       t.status,
+			       t.vendor_form_status,
+			       t.priority,
+			       
+			       n.brand,
+			       n.sale_name,
+			       n.warranty_period,
+			       n.link_man,
+			       n.link_email,
+			       n.country,
+			       n.belong_end,
+			       
+			       concat(m.name, '(', m.user_code, ')') as create_user_name,
+			       date_format(t.create_time, '%Y-%m-%d %H:%i') as create_time,
+			       (select concat(x.name, '(', x.user_code, ')') from v_user x where x.user_id = t.mod_user_id) as mod_user_name,
+			       date_format(t.mod_time, '%Y-%m-%d %H:%i') as mod_time,
+			       date_format(t.feedback_cs_time, '%Y-%m-%d %H:%i') as feedback_cs_time,
+			       date_format(t.feedback_cs_time2, '%Y-%m-%d %H:%i') as feedback_cs_time2,
+			       t.cur_initial_type,
+			       date_format(t.cur_initial_time, '%Y-%m-%d %H:%i') as cur_initial_time,
+			       t.initial_remark,
+			       
+			       t.solution_type,
+			       t.solution_desc,
+			       t.spf_no,
+			       t.spf_value_amount,
+			       date_format(t.es_shipment_date, '%Y-%m-%d') as es_shipment_date,
+			       date_format(t.shipment_date, '%Y-%m-%d') as shipment_date,
+			       date_format(t.list_provide_time, '%Y-%m-%d') as list_provide_time,
+			       t.spf_delivered_type,
+			       t.tracking_no,
+			       t.reim_amount,
+			       date_format(t.reim_app_confirm_time, '%Y-%m-%d') as reim_app_confirm_time,
+			       t.reim_app_scan_file,
+			       date_format(t.first_solution_time, '%Y-%m-%d %H:%i') as first_solution_time,
+			       date_format(t.final_solution_time, '%Y-%m-%d %H:%i') as final_solution_time,
+			       
+			       concat(k.vendor_name, '(', k.vendor_code, ')') as vendorName,
+			       get_dict_name(1113, t.vendor_form_status) as confirm_rs,
+			       g.rma_no,
+			       g.remark as log_remark,
+			       
+			       date_format(t.feedback_supplier_time, '%Y-%m-%d %H:%i') as feedback_supplier_time,
+			       date_format(t.close_supplier_time, '%Y-%m-%d %H:%i') as close_supplier_time,
+			       date_format(t.close_time, '%Y-%m-%d %H:%i') as close_time,
+			       date_format(t.confirm_close_time, '%Y-%m-%d %H:%i') as confirm_close_time,
+			       concat(y.cust_serv_name, '(', y.cust_serv_code, ')') as csCodeName
+			  from d_panel_cpt t
+			  left join d_order f
+			    on f.order_id = t.order_id
+			  left join b_vendor k
+			    on k.vendor_code = t.vendor_code
+			  left join d_panel_cpt_vendor_log g
+			    on g.complaint_id = t.complaint_id
+			    and g.vendor_log_id =
+			       (select substring_index(group_concat(h.vendor_log_id order by h.create_time desc), ',', 1)
+			          from d_panel_cpt_vendor_log h
+			         where h.complaint_id = t.complaint_id
+			           and h.vendor_code = t.vendor_code)
+			  left join s_user m
+			    on m.user_id = t.create_user_id
+			  left join b_customer n
+			    on n.cust_code = m.user_code
+			  left join b_cs_2_cust x
+			    on x.user_code = m.user_code
+			  left join b_cs y
+			    on y.cust_serv_code = x.cust_serv_code
+			 where 1 = 1
+		]]>
+		<include refid="List_Condition" />
+	</select>
+
+	<select id="getInfo" resultType="form">
+		<![CDATA[
+            select t.complaint_id,
+                   t.complaint_no,
+                   t.cust_complaint_no,
+
+                   t.order_id,
+                   if(isnull(f.order_no), t.order_no, f.order_no) as order_no,
+                   if(isnull(f.cust_order_no), t.cust_order_no, f.cust_order_no) as cust_order_no,
+                   f.our_model,
+                   f.cust_model,
+                   f.movement,
+                   f.screen,
+                   f.brand as order_brand,
+                   f.order_qty,
+                   f.cust_name as cust_name,
+                   f.sold_to_country,
+                   f.payment_method,
+                   f.order_date,
+                   f.pid,
+                   f.order_type,
+                   f.delivery_period,
+                   f.delivery_form,
+                   f.inter_trade_terms,
+
+                   t.cbu_sn,
+                   t.bad_phase,
+                   t.failure_type,
+                   t.part_name,
+                   t.panel_module_model,
+                   t.panel_module_sn,
+                   t.oc_model,
+                   t.oc_sn,
+                   t.failure_remark,
+                   t.exchange_test_rs,
+                   t.other_check_rs,
+                   t.remark,
+
+                   t.status,
+                   get_dict_name(1000, t.status) as status_name,
+                   t.vendor_form_status,
+                   get_dict_name(1113, t.vendor_form_status) as vendor_form_status_name,
+                   t.priority,
+                   get_dict_name(1120, t.priority) as priority_name,
+
+                   n.brand,
+                   n.sale_name,
+                   n.warranty_period,
+                   n.link_man,
+                   n.link_email,
+                   n.country,
+                   n.belong_end,
+
+                   concat(m.name, '(', m.user_code, ')') as create_user_name,
+                   date_format(t.create_time, '%Y-%m-%d %H:%i') as create_time,
+                   (select concat(x.name, '(', x.user_code, ')') from v_user x where x.user_id = t.mod_user_id) as mod_user_name,
+                   date_format(t.mod_time, '%Y-%m-%d %H:%i') as mod_time,
+                   date_format(t.feedback_cs_time, '%Y-%m-%d %H:%i') as feedback_cs_time,
+                   date_format(t.feedback_cs_time2, '%Y-%m-%d %H:%i') as feedback_cs_time2,
+                   t.first_initial_type,
+                   date_format(t.first_initial_time, '%Y-%m-%d %H:%i') as first_initial_time,
+                   t.cur_initial_type,
+                   date_format(t.cur_initial_time, '%Y-%m-%d %H:%i') as cur_initial_time,
+                   t.initial_remark,
+
+                   t.solution_type,
+                   t.solution_desc,
+                   t.spf_no,
+                   t.spf_value_amount,
+                   date_format(t.es_shipment_date, '%Y-%m-%d') as es_shipment_date,
+                   date_format(t.shipment_date, '%Y-%m-%d') as shipment_date,
+                   date_format(t.list_provide_time, '%Y-%m-%d') as list_provide_time,
+                   t.spf_delivered_type,
+                   t.tracking_no,
+                   t.reim_amount,
+                   date_format(t.reim_app_confirm_time, '%Y-%m-%d') as reim_app_confirm_time,
+                   t.reim_app_scan_file,
+                   date_format(t.first_solution_time, '%Y-%m-%d %H:%i') as first_solution_time,
+                   date_format(t.final_solution_time, '%Y-%m-%d %H:%i') as final_solution_time,
+
+                   concat(k.vendor_name, '(', k.vendor_code, ')') as vendorName,
+                   get_dict_name(1113, t.vendor_form_status) as confirm_rs,
+                   g.rma_no,
+                   g.remark as log_remark,
+
+                   date_format(t.feedback_supplier_time, '%Y-%m-%d %H:%i') as feedback_supplier_time,
+                   date_format(t.close_supplier_time, '%Y-%m-%d %H:%i') as close_supplier_time,
+                   date_format(t.close_time, '%Y-%m-%d %H:%i') as close_time,
+                   date_format(t.confirm_close_time, '%Y-%m-%d %H:%i') as confirm_close_time,
+                   concat(y.cust_serv_name, '(', y.cust_serv_code, ')') as csCodeName,
+                   t.cbu_sn_img1,
+                   t.cbu_sn_img2,
+                   t.cbu_sn_img3,
+                   t.bad_phen_img1,
+                   t.bad_phen_img2,
+                   t.bad_phen_img3,
+                   t.panel_module_sn_img1,
+                   t.panel_module_sn_img2,
+                   t.panel_module_sn_img3,
+                   t.oc_sn_img1,
+                   t.oc_sn_img2,
+                   t.oc_sn_img3,
+                   t.screen_fac_packing_img1,
+                   t.screen_fac_packing_img2,
+                   t.screen_fac_packing_img3,
+                   t.outside_packing_img1,
+                   t.outside_packing_img2,
+                   t.outside_packing_img3,
+                   t.inside_packing_img1,
+                   t.inside_packing_img2,
+                   t.inside_packing_img3,
+                   t.scrapped_img1,
+                   t.scrapped_img2,
+                   t.scrapped_img3
+              from d_panel_cpt t
+              left join d_order f
+                on f.order_id = t.order_id
+              left join b_vendor k
+                on k.vendor_code = t.vendor_code
+              left join d_panel_cpt_vendor_log g
+                on g.complaint_id = t.complaint_id
+                and g.vendor_log_id =
+                   (select substring_index(group_concat(h.vendor_log_id order by h.create_time desc), ',', 1)
+                      from d_panel_cpt_vendor_log h
+                     where h.complaint_id = t.complaint_id
+                       and h.vendor_code = t.vendor_code)
+              left join s_user m
+                on m.user_id = t.create_user_id
+              left join b_customer n
+                on n.cust_code = m.user_code
+              left join b_cs_2_cust x
+                on x.user_code = m.user_code
+              left join b_cs y
+                on y.cust_serv_code = x.cust_serv_code
+             where t.complaint_id = #{complaintId}
+        ]]>
+	</select>
+
+	<!-- 查询“简单”工单信息 -->
+	<select id="getSimpleInfo" resultType="form">
+		select t.status, t.vendor_code from d_panel_cpt t where complaint_id = #{complaintId}
+	</select>
+
+	<!-- 客服申请闭环原因 -->
+	<select id="getAppClosedReason" resultType="string">
+		<![CDATA[
+            select y.remark
+              from d_panel_cpt_log y
+             where y.panel_cpt_log_id =
+                   (select substring_index(group_concat(x.panel_cpt_log_id order by x.create_time desc), ',', 1)
+                      from d_panel_cpt_log x
+                     where x.complaint_id = #{complaintId}
+                       and x.status = 10)
+        ]]>
+	</select>
+
+	<!-- 屏体工单-沟通历史记录 -->
+	<insert id="insertFormLog">
+		<![CDATA[
+            insert into d_panel_cpt_log
+              (complaint_id, status, remark, create_user_id, create_time)
+            values
+              (#{complaintId}, #{status}, #{remark}, #{createUserId}, now())
+        ]]>
+	</insert>
+	<select id="qryFormLog" resultType="formLog">
+		<![CDATA[
+            select t.complaint_id,
+                   t.status,
+                   get_dict_name(1000, t.status) as status_name,
+                   t.remark,
+                   concat(f.name, '(', f.user_code, ')') as create_user_name,
+                   date_format(t.create_time, '%Y-%m-%d %H:%i') as create_time
+              from d_panel_cpt_log t, s_user f
+             where t.create_user_id = f.user_id
+               and t.complaint_id = #{complaintId}
+             order by t.create_time desc
+        ]]>
+	</select>
+
+	<update id="updateStatus">
+		update d_panel_cpt set
+		<!-- 撤消 -->
+		<if test="status == 1">
+            <![CDATA[
+				feedback_cs_time       = null,
+				feedback_cs_time2      = null,
+				first_initial_type     = null,
+				first_initial_time     = null,
+				cur_initial_type       = null,
+				cur_initial_time       = null,
+				initial_remark         = null,
+				solution_type          = null,
+				solution_desc          = null,
+				spf_no                 = null,
+				spf_value_amount       = null,
+				es_shipment_date       = null,
+				shipment_date          = null,
+				list_provide_time      = null,
+				spf_delivered_type     = null,
+				tracking_no            = null,
+				reim_amount            = null,
+				reim_app_confirm_time  = null,
+				reim_app_scan_file     = null,
+				first_solution_time    = null,
+				final_solution_time    = null,
+				close_time             = null,
+				confirm_close_time     = null,
+			]]>
+		</if>
+		<!-- 客户确认时重头开始 -->
+		<if test="status == 2">
+            <![CDATA[
+				feedback_cs_time2      = now(),
+				first_initial_type     = null,
+				first_initial_time     = null,
+				cur_initial_type       = null,
+				cur_initial_time       = null,
+				initial_remark         = null,
+				solution_type          = null,
+				solution_desc          = null,
+				spf_no                 = null,
+				spf_value_amount       = null,
+				es_shipment_date       = null,
+				shipment_date          = null,
+				list_provide_time      = null,
+				spf_delivered_type     = null,
+				tracking_no            = null,
+				reim_amount            = null,
+				reim_app_confirm_time  = null,
+				reim_app_scan_file     = null,
+				first_solution_time    = null,
+				final_solution_time    = null,
+				close_time             = null,
+				confirm_close_time     = null,
+			]]>
+		</if>
+		<if test="status == 10">close_time = now(), final_solution_time = if(isnull(final_solution_time), now(), final_solution_time),</if>
+		<if test="status == 11">confirm_close_time = now(),</if>
+		status = #{status} where complaint_id = #{complaintId}
+	</update>
+
+	<update id="saveFormRemark">
+		update d_panel_cpt set remark = #{remark} where complaint_id = #{complaintId}
+	</update>
+
+</mapper>

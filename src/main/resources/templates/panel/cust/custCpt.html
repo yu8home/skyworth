@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('客户工单')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'form/qryForPage?formMenuType=1',
+            fit : true,
+            selectOnCheck : false,
+            toolbar : '.dgtoolbar',
+            onClickRow : function(i, r) {
+                $('#dg').datagrid('clearSelections');
+                $('#dg').datagrid('checkRow', i);
+                checkBnt();
+            },
+            onCheck : checkBnt,
+            onUncheck : checkBnt,
+            onCheckAll : checkBnt,
+            onUncheckAll : checkBnt,
+            onLoadSuccess : function(i, r) {
+                $("#editBnt, #delBnt, #cloneBnt, #batchSubmitBnt, #undoBnt, #initBnt, #solutionBnt, #confirmClosedBnt, #viewBnt").linkbutton('disable');
+            }
+        });
+
+        // 双击选择订单
+        $("#orderNo").textbox('textbox').bind("dblclick", function() {
+            $("#ww-order").orderDialog({
+                selRow : function(r) {
+                    $("#frm input[name=orderId]").val(r['orderId']);
+
+                    var valArr = [ "orderNo", "custOrderNo", "movement", "custModel", "ourModel", "soldToCountry" ];
+                    $.each(valArr, function(i, v) {
+                        $("#frm input[textboxname='" + v + "']").textbox('setValue', r[v]);
+                    });
+                }
+            });
+        });
+
+        // 双击图片表格头
+        $("#frm .tabImg tr:first td").unbind("dblclick").bind("dblclick", function() {
+            $(".tabImg-td-red").removeClass("tabImg-td-red");
+            $("#frm .tabImg td[id^='" + $(this).attr("name").substring(2) + "']").addClass("tabImg-td-red");
+            // 是否灰显按钮
+            $("#addImg,#delImg").linkbutton('enable');
+            $(".tabImg-td-red").each(function(i) {
+                if ($(this).html() != "") {
+                    $("#addImg").linkbutton('disable');
+                } else {
+                    $("#delImg").linkbutton('disable');
+                }
+            });
+        });
+
+        // 单击图片单元格增加红色边框
+        $("#frm .tabImg tr:not(:first) td").unbind("click").bind("click", function() {
+            $(".tabImg-td-red").removeClass("tabImg-td-red");
+            $(this).addClass("tabImg-td-red");
+            // 是否灰显按钮
+            $("#addImg,#delImg").linkbutton('enable');
+            $(".tabImg-td-red").each(function(i) {
+                if ($(this).html() != "") {
+                    $("#addImg").linkbutton('disable');
+                } else {
+                    $("#delImg").linkbutton('disable');
+                }
+            });
+        });
+        tdImgDdlclick('frm', true);
+        tdImgDdlclick('frmView');
+    });
+
+    function checkBnt() {
+        $("#editBnt, #delBnt, #cloneBnt, #batchSubmitBnt, #undoBnt, #initBnt, #solutionBnt, #confirmClosedBnt, #viewBnt").linkbutton('disable');
+        var rows = $('#dg').datagrid('getChecked');
+        if (rows.length == 1) {
+            $("#viewBnt, #cloneBnt").linkbutton('enable');
+            var _status = rows[0].status;
+            var _isTempSave = rows[0].isTempSave;
+            if (_status == g_status_new) {
+                $("#editBnt, #delBnt").linkbutton('enable');// 新建时可以“编辑、删除”
+                // 临时保存的工单不能“提交”
+                if (!_isTempSave) {
+                    $("#batchSubmitBnt").linkbutton('enable');
+                }
+            } else if (_status == g_status_audit) {
+                $("#undoBnt").linkbutton('enable');// 撤消
+            } else if (_status == g_status_info_rejected) {
+                $("#editBnt, #undoBnt").linkbutton('enable');// 驳回时可以“编辑、撤消”
+                // 临时保存的工单不能“提交”
+                if (!_isTempSave) {
+                    $("#batchSubmitBnt").linkbutton('enable');
+                }
+            } else if (_status == g_status_initial_confirming) {
+                $("#initBnt").linkbutton('enable');// 确认初审意见
+            } else if (_status == g_status_solution_confirming) {
+                $("#solutionBnt").linkbutton('enable');// 确认解决方案
+            } else if (_status == g_status_to_be_closed) {
+                $("#confirmClosedBnt").linkbutton('enable');// 确认闭环
+            }
+        } else if (rows.length > 1) {
+            var del = true;
+            var sub = true;
+            for (var i = 0; i < rows.length; i++) {
+                var _status = rows[i].status;
+                var _isTempSave = rows[i].isTempSave;
+                if ($.inArray(_status, [ g_status_new, g_status_info_rejected ]) == -1) {
+                    del = false;
+                    sub = false;
+                } else {
+                    if (_isTempSave) {
+                        sub = false;
+                    }
+                }
+            }
+            $("#batchSubmitBnt").linkbutton(sub ? 'enable' : 'disable');
+            $("#delBnt").linkbutton(del ? 'enable' : 'disable');
+        }
+    }
+
+    function add() {
+        $.post('console/sys/coding/getCodingNextVal/cptCode', function(rs) {
+            $("#frm input[textboxname='complaintNo']").textbox('setValue', rs);
+        });
+        myEditDialog('[[#{panel.form.cust}]]-[[#{new}]]', 'panel/custcpt/add');
+    }
+
+    function edit() {
+        $.post('form/edit', {
+            complaintId : $('#dg').datagrid("getChecked")[0].complaintId
+        }, function(rs) {
+            $('#frm').form('load', rs);
+            editAfterImg('frm');
+            myEditDialog('[[#{panel.form.cust}]]-[[#{edit}]]', 'panel/custcpt/update');
+        });
+    }
+
+    function del() {
+        $.messager.confirm(g_tip_title, '[[#{confirm.deletion}]]', function(r) {
+            if (r) {
+                var ids = [];
+                var rows = $('#dg').datagrid('getChecked');
+                for (var i = 0; i < rows.length; i++) {
+                    ids.push(rows[i].complaintId);
+                }
+                $.post('panel/custcpt/delete', {
+                    ids : ids.join(",")
+                }, function() {
+                    tipSuccess();
+                    $('#dg').datagrid("reload");
+                });
+            }
+        });
+    }
+
+    // 克隆
+    function cloned() {
+        $.messager.confirm(g_tip_title, '[[#{confirm.clone}]]', function(r) {
+            if (r) {
+                $.post('panel/custcpt/cloned', {
+                    complaintId : $('#dg').datagrid('getChecked')[0].complaintId
+                }, function() {
+                    tipSuccess();
+                    $('#dg').datagrid("reload");
+                });
+            }
+        });
+    }
+
+    function undo() {
+        var dlg = $("#ww-cancel");
+        var frm = dlg.find("form");
+        frm.find("input[name=complaintId]").val($('#dg').datagrid("getChecked")[0].complaintId);
+
+        dlg.dialog({
+            title : '[[#{bnt.cancel}]]',
+            toolbar : [ {
+                text : bnt_save,
+                iconCls : 'icon-save',
+                handler : function() {
+                    frm.form('submit', {
+                        success : function(rs) {
+                            var json = $.parseJSON(rs);
+                            if (json.code) {
+                                tipSuccess();
+                                dlg.dialog('close');
+                                $('#dg').datagrid('reload');
+                            } else {
+                                tipFail(json.data);
+                            }
+                        }
+                    });
+                }
+            }, rebackBnt(dlg) ],
+            onClose : function() {
+                frm.form('reset');
+            }
+        }).dialog('center').dialog('open');
+    }
+
+    function batchSubmit() {
+        $.messager.confirm(g_tip_title, '[[#{confirm.submit}]]', function(r) {
+            if (r) {
+                var ids = [];
+                var rows = $('#dg').datagrid('getChecked');
+                for (var i = 0; i < rows.length; i++) {
+                    ids.push(rows[i].complaintId);
+                }
+                $.post('panel/custcpt/batchSubmit', {
+                    ids : ids.join(",")
+                }, function() {
+                    tipSuccess();
+                    $('#dg').datagrid("reload");
+                });
+            }
+        });
+    }
+
+    function myEditDialog(title, url) {
+        $("#ww").dialog({
+            title : title,
+            maximized : true,
+            toolbar : [ {
+                text : bnt_save,
+                iconCls : 'icon-save',
+                handler : function() {
+                    $("#frm input[name=status]").val(g_status_new);
+                    save(url);
+                }
+            }, {
+                text : '[[#{bnt.submit}]]',
+                iconCls : 'icon-ok',
+                handler : function() {
+                    $("#frm input[name=status]").val(g_status_audit);
+                    save(url);
+                }
+            }, rebackBnt($("#ww")) ],
+            onClose : function() {
+                closeDialog();
+            }
+        }).dialog('center').dialog('open');
+    }
+
+    function save(url) {
+        $("#frm").form('submit', {
+            url : url,
+            onSubmit : function() {
+                var isTempSave = 0;
+                if (!$(this).form('validate') || !addOrUpdSubmitBefore()) {
+                    isTempSave = 1;
+                    if ($("#frm input[name=status]").val() == g_status_audit) {
+                        return false;
+                    }
+                }
+                $("#frm input[name=isTempSave]").val(isTempSave);
+                return true;
+            },
+            success : function(rs) {
+                var json = $.parseJSON(rs);
+                if (json.code) {
+                    tipSuccess();
+                    $("#ww").dialog('close');
+                    $('#dg').datagrid('reload');
+                } else {
+                    tipFail(json.data);
+                }
+            }
+        });
+    }
+
+    function closeDialog() {
+        $("#frm,#frmView").form('clear');
+        $("#addImg,#delImg").linkbutton('disable');
+        $(".tabImg-td-red").removeClass("tabImg-td-red");
+        $(".tabImg").find("tr:not(:first) td").empty();
+    }
+
+    // 提交前的校验
+    function addOrUpdSubmitBefore() {
+        if ($("#frm #orderNo").textbox("getValue") == "" && $("#frm #custOrderNo").textbox("getValue") == "") {
+            tipFail('[[#{orderNo.custOrderNo.null}]]');
+            return false;
+        }
+        var k = 0;
+        $("#badPhenImg1,#badPhenImg2,#badPhenImg3").each(function(i) {
+            if ($(this).html() != "") {
+                k++;
+                return false;
+            }
+        });
+        $("#ocSnImg1,#ocSnImg2,#ocSnImg3").each(function(i) {
+            if ($(this).html() != "") {
+                k++;
+                return false;
+            }
+        });
+        if (k == 2) {
+            return true;
+        } else {
+            tipFail('[[#{redHead.required}]]');
+            return false;
+        }
+    }
+
+    function doSearch() {
+        $('#qryFrmDiv').qryFormDialog({
+            dg : 'dg'
+        });
+    }
+
+    // 图片上传
+    function upImg() {
+        var imgUpload = $("#imgUpload");
+
+        var _frmStr = "";
+        _frmStr += '<form enctype="multipart/form-data" method="post" action="panel/custcpt/upImg">';
+        _frmStr += '  <input type="hidden" name="complaintNo">';
+        _frmStr += '  <input type="hidden" name="imgType">    ';
+        _frmStr += '  <div style="padding: 15px;width: 400px;">            ';
+        _frmStr += '      <input class="easyui-filebox" id="fileName" name="fileName" style="width: 80%" data-options="required:true,multiple:true,accept:\'image/*\',buttonText:\'' + browse + '\'">';
+        _frmStr += '      <a class="easyui-linkbutton">[[#{bnt.upload}]]</a>';
+        _frmStr += '  </div>                                  ';
+        _frmStr += '</form>                                   ';
+
+        var frm = $(_frmStr);
+        frm.find('.easyui-linkbutton').bind("click", function() {
+            frm.find("input[name=complaintNo]").val($("#frm input[textboxname='complaintNo']").textbox('getValue'));
+            var tdName = $(".tabImg-td-red:first").attr('id');
+            frm.find("input[name=imgType]").val(tdName.substring(0, tdName.length - 2));
+
+            frm.form('submit', {
+                success : function(rs) {
+                    var json = $.parseJSON(rs);
+                    if (json.code) {
+                        tipSuccess();
+
+                        var data = json.data;
+                        $(".tabImg-td-red").each(function(i) {
+                            var popUrl = data.pop();
+                            if (popUrl) {
+                                var url = encodeURI(popUrl);
+                                $("#frm input[name=" + $(this).attr("id") + "]").val(url);
+                                $(this).html('<img width="98%" height="95px" src="panel/custcpt/showImg?filePath=' + url + '" />');
+                            }
+                        });
+                        imgUpload.dialog('close');
+                    } else {
+                        $.messager.alert(g_tip_title, json.data);
+                    }
+                }
+            });
+        });
+
+        imgUpload.empty().append(frm);
+        $.parser.parse(imgUpload);// 重新渲染
+
+        imgUpload.dialog({
+            title : '[[#{bnt.upload.img}]]'
+        }).dialog('center').dialog('open');
+    }
+
+    // 删除图片
+    function delImg() {
+        $(".tabImg-td-red").each(function(i) {
+            $("#frm input[name=" + $(this).attr("id") + "]").val("");
+            $(this).empty();
+            $("#delImg").linkbutton('disable');
+            $("#addImg").linkbutton('enable');// 点击删除后可以“新增”
+        });
+    }
+
+    // 查看
+    function view() {
+        var _complaintId = $('#dg').datagrid("getChecked")[0].complaintId;
+        var dlg = $('#custCptView');
+        dlg.find("input,textarea").attr("disabled", true);
+
+        $.post('form/edit', {
+            complaintId : _complaintId
+        }, function(rs) {
+            setViewValue(dlg, rs);
+            editAfterImg('frmView');
+
+            showSolution();
+
+            $('#dg-formlog').datagrid({
+                url : 'form/qryFormLog?complaintId=' + _complaintId
+            });
+
+            dlg.dialog({
+                title : '[[#{panel.form.cust}]]-[[#{view}]]',
+                maximized : true,
+                onOpen : function() {
+                    dlg.find(".easyui-tabs").tabs('select', 0);
+                },
+                onClose : function() {
+                    closeDialog();
+                }
+            }).dialog('center').dialog('open');
+        }, 'json');
+    }
+
+    // 确认
+    function confirm() {
+        var std = $('#dg').datagrid("getChecked")[0];
+        var _complaintId = std.complaintId;
+        var _initialType = std.curInitialType;
+        var _status = std.status;
+
+        var dlg = $("#ww-confirm");
+        var frm = dlg.find("form");
+        frm.find("input[name=complaintId]").val(_complaintId);
+        // 回填客服回复
+        if (_status == g_status_initial_confirming) {
+            frm.find("#csReplyTypeTd").html('[[#{initial.type}]]');
+            frm.find("#csReplyType").textbox('setValue', std.curInitialType);
+            frm.find("#csReply").textbox('setValue', std.initialRemark);
+        } else if (_status == g_status_solution_confirming) {
+            frm.find("#csReplyTypeTd").html('[[#{solution.type}]]');
+            frm.find("#csReplyType").textbox('setValue', std.solutionType);
+            frm.find("#csReply").textbox('setValue', std.solutionDesc);
+        }
+
+        dlg.dialog({
+            title : (_status == g_status_initial_confirming ? "[[#{bnt.initial.confirm}]]" : "[[#{bnt.solution.confirm}]]"),
+            toolbar : [ {
+                text : bnt_save,
+                iconCls : 'icon-save',
+                handler : function() {
+                    frm.form('submit', {
+                        onSubmit : function() {
+                            if (!frm.form('validate')) {
+                                return false;
+                            }
+                            var status = dlg.find("input[name=status]");
+                            var isAgree = dlg.find("#isAgree").combobox("getValue");
+                            if (_status == g_status_initial_confirming) {
+                                if (isAgree == 0) {
+                                    status.val(g_status_initial_rejected);
+                                } else {
+                                    if (_initialType == 'Confirm') {
+                                        status.val(g_status_solution_being_provided);
+                                    } else {
+                                        status.val(g_status_will_to_be_closed);
+                                    }
+                                }
+                            } else if (_status == g_status_solution_confirming) {
+                                if (isAgree == 0) {
+                                    status.val(g_status_solution_rejected);
+                                } else {
+                                    status.val(g_status_will_to_be_closed);
+                                }
+                            }
+                            return true;
+                        },
+                        success : function(rs) {
+                            var json = $.parseJSON(rs);
+                            if (json.code) {
+                                tipSuccess();
+                                dlg.dialog('close');
+                                $('#dg').datagrid('reload');
+                            } else {
+                                tipFail(json.data);
+                            }
+                        }
+                    });
+                }
+            }, rebackBnt(dlg) ],
+            onClose : function() {
+                frm.form('reset');
+            }
+        }).dialog('center').dialog('open');
+    }
+
+    // 客户确认闭环
+    function confirmClosed() {
+        var dlg = $("#ww-closed");
+        var frm = dlg.find("form");
+
+        var std = $('#dg').datagrid("getChecked")[0];
+        var _complaintId = std.complaintId;
+        frm.find("input[name=ids]").val(_complaintId);
+        // 客服申请闭环原因
+        $.post('form/getAppClosedReason', {
+            complaintId : _complaintId
+        }, function(rs) {
+            frm.find("#appClosedReason").textbox('setValue', rs);
+        });
+        dlg.dialog({
+            title : '[[#{customer.confirm.closed}]]',
+            toolbar : [ {
+                text : bnt_save,
+                iconCls : 'icon-save',
+                handler : function() {
+                    frm.form('submit', {
+                        success : function(rs) {
+                            var json = $.parseJSON(rs);
+                            if (json.code) {
+                                tipSuccess();
+                                dlg.dialog('close');
+                                $('#dg').datagrid('reload');
+                            } else {
+                                tipFail(json.data);
+                            }
+                        }
+                    });
+                }
+            }, rebackBnt(dlg) ],
+            onClose : function() {
+                frm.form('reset');
+            }
+        }).dialog('center').dialog('open');
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<shiro:hasPermission name="custcpt:add">
+			<a class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="add()" th:text="#{bnt.new}">新建</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="custcpt:update">
+			<a id="editBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="edit()" th:text="#{bnt.edit}">编辑</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="custcpt:delete">
+			<a id="delBnt" class="easyui-linkbutton" data-options="iconCls:'icon-remove'" onclick="del()" th:text="#{bnt.del}">删除</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="custcpt:cloned">
+			<a id="cloneBnt" class="easyui-linkbutton" data-options="iconCls:'icon-copy'" onclick="cloned()" th:text="#{bnt.clone}">克隆</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="custcpt:batchSubmit">
+			<a id="batchSubmitBnt" class="easyui-linkbutton easyui-tooltip" data-options="iconCls:'icon-ok'" th:attr="title=#{tip.batchSubmitBnt}" onclick="batchSubmit()" th:text="#{bnt.submit}">提交</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="custcpt:confirm">
+			<a id="undoBnt" class="easyui-linkbutton" data-options="iconCls:'icon-undo'" onclick="undo()" th:text="#{bnt.cancel}">撤消</a>
+			<a id="initBnt" class="easyui-linkbutton" data-options="iconCls:'icon-confirm'" onclick="confirm()" th:text="#{bnt.initial.confirm}">确认初审意见</a>
+			<a id="solutionBnt" class="easyui-linkbutton" data-options="iconCls:'icon-confirm'" onclick="confirm()" th:text="#{bnt.solution.confirm}">确认解决方案</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="custcpt:confirmClosed">
+			<a id="confirmClosedBnt" class="easyui-linkbutton" data-options="iconCls:'icon-closed'" onclick="confirmClosed()" th:text="#{bnt.closed}">闭环</a>
+		</shiro:hasPermission>
+		<a id="viewBnt" class="easyui-linkbutton" data-options="iconCls:'icon-view'" onclick="view()" th:text="#{bnt.view}">查看</a>
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-search'" onclick="doSearch()" th:text="#{bnt.qry}">查询</a>
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-download'" onclick="xlsDownload('panel/custcpt/xlsDownload/custCpt.xlsx')" th:text="#{bnt.tmplate.download}">模板下载</a>
+		<shiro:hasPermission name="custcpt:excelImport">
+			<a class="easyui-linkbutton" data-options="iconCls:'icon-excel'" onclick="$('#excelUpload').excelUpload({url:'panel/custcpt/excelImport', dg:'dg'})" th:text="#{bnt.import}">导入</a>
+		</shiro:hasPermission>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'ck',checkbox:true" />
+				<th data-options="field:'complaintNo',width:'12%'" th:text="#{complaintNo}">客诉单号</th>
+				<th data-options="field:'custComplaintNo',width:'18%'" th:text="#{custComplaintNo}">客户投诉号</th>
+				<th data-options="field:'isTempSave',width:'10%',formatter:yesOrNoRender" th:text="#{isTempStore}">是否暂存</th>
+				<th data-options="field:'statusName',width:'22%'" th:text="#{status}">状态</th>
+				<th data-options="field:'curInitialType',width:'15%'" th:text="#{initial.type}">初审意见类型</th>
+				<th data-options="field:'solutionType',width:'13%'" th:text="#{solution.type}">解决方案类型</th>
+				<th data-options="field:'feedbackCsTime',width:'15%'" th:text="#{feedback.cs.time}">反馈客服时间</th>
+				<th data-options="field:'orderNo',width:'10%'" th:text="#{orderNo}">订单号</th>
+				<th data-options="field:'movement',width:'10%'" th:text="#{chassis}">机芯</th>
+				<th data-options="field:'ourModel',width:'13%'" th:text="#{ourModel}">我司型号</th>
+				<th data-options="field:'custModel',width:'15%'" th:text="#{custModel}">买家型号</th>
+				<th data-options="field:'createTime',width:'15%'" th:text="#{createTime}">创建时间</th>
+			</tr>
+		</thead>
+	</table>
+
+
+	<!-- 查询条件 -->
+	<div id="qryFrmDiv" class="easyui-dialog dlgForm2" data-options="height:330,closed:true">
+		<form method="post">
+			<table class="qryTable">
+				<tr>
+					<td th:text="#{complaintNo}">客诉单号</td>
+					<td>
+						<input class="easyui-textbox" name="complaintNo">
+					</td>
+					<td th:text="#{status}">状态</td>
+					<td>
+						<input class="easyui-combobox" name="status" data-options="url:'console/sys/dict/selectDictEx/1000/11',panelHeight:300">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{custComplaintNo}">客户投诉号</td>
+					<td>
+						<input class="easyui-textbox" name="custComplaintNo">
+					</td>
+					<td th:text="#{orderNo}">订单号</td>
+					<td>
+						<input class="easyui-textbox" name="orderNo">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{feedback.cs.time.start}">反馈客服时间(始)</td>
+					<td>
+						<input class="Wdate" id="feedbackCsTimeStart" name="feedbackCsTimeStart" onfocus="WdatePicker({isShowClear:true,readOnly:true,maxDate:'%y-%M-%d'})">
+					</td>
+					<td th:text="#{feedback.cs.time.end}">反馈客服时间(止)</td>
+					<td>
+						<input class="Wdate" id="feedbackCsTimeEnd" name="feedbackCsTimeEnd" onfocus="WdatePicker({isShowClear:true,readOnly:true,minDate:'#F{$dp.$D(\'feedbackCsTimeStart\')}',maxDate:'%y-%M-%d'})">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{initial.type}">初审意见类型</td>
+					<td>
+						<input class="easyui-combobox" name="curInitialType" data-options="url:'console/sys/dict/selectDict/1111',panelHeight:'auto'">
+					</td>
+					<td th:text="#{solution.type}">解决方案类型</td>
+					<td>
+						<input class="easyui-combobox" name="solutionType" data-options="url:'console/sys/dict/selectDict/1112',panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{chassis.model}">机芯\机型</td>
+					<td>
+						<input class="easyui-textbox" name="movementModel">
+					</td>
+					<td th:text="#{chassis}">机芯</td>
+					<td>
+						<input class="easyui-textbox" name="movement">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+
+	<!-- 编辑 -->
+	<div id="ww" class="easyui-dialog" data-options="closed:true">
+		<form id="frm" method="post">
+			<input type="hidden" name="complaintId">
+			<input type="hidden" name="status">
+			<input type="hidden" name="isTempSave">
+			<input type="hidden" name="orderId">
+			<table class="maxDlgForm">
+				<tr>
+					<td th:text="#{complaintNo}">客诉单号</td>
+					<td>
+						<input class="easyui-textbox" name="complaintNo" data-options="readonly:true">
+					</td>
+					<td th:text="#{custComplaintNo}">客户投诉号</td>
+					<td>
+						<input class="easyui-textbox" name="custComplaintNo">
+					</td>
+					<td th:text="#{feedback.cs.time}">反馈客服时间</td>
+					<td>
+						<input class="easyui-textbox" name="feedbackCsTime" data-options="disabled:true">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{orderNo}">订单号</td>
+					<td>
+						<input class="easyui-textbox" id="orderNo" name="orderNo" data-options="prompt:'Double click to select'">
+					</td>
+					<td th:text="#{cust.orderNo}">客户订单号</td>
+					<td>
+						<input class="easyui-textbox" id="custOrderNo" name="custOrderNo">
+					</td>
+					<td th:text="#{chassis}">机芯</td>
+					<td>
+						<input class="easyui-textbox" name="movement" data-options="disabled:true">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{ourModel}">我司型号</td>
+					<td>
+						<input class="easyui-textbox" name="ourModel" data-options="disabled:true">
+					</td>
+					<td th:text="#{custModel}">买家型号</td>
+					<td>
+						<input class="easyui-textbox" name="custModel" data-options="disabled:true">
+					</td>
+					<td th:text="#{sold.country}">销往国家</td>
+					<td>
+						<input class="easyui-textbox" name="soldToCountry" data-options="disabled:true">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{cbu.sn}">整机序列号</td>
+					<td>
+						<input class="easyui-textbox" name="cbuSn">
+					</td>
+					<td th:text="#{bad.phase}">不良阶段</td>
+					<td>
+						<input class="easyui-combobox" name="badPhase" data-options="url:'console/sys/dict/selDict/1001',panelHeight:'auto',required:true">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{part.name}">部件名称</td>
+					<td>
+						<input class="easyui-combobox" name="partName" data-options="url:'console/sys/dict/selectDict/1104',panelHeight:300">
+					</td>
+					<td th:text="#{phenomenon.type}">故障现象类型</td>
+					<td colspan="3">
+						<input class="easyui-combobox" style="width: 83%" name="failureType" data-options="url:'console/sys/dict/selectDict/1102',panelHeight:300">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{panel.module.model}">屏体模组型号</td>
+					<td>
+						<input class="easyui-textbox" name="panelModuleModel" data-options="required:true">
+					</td>
+					<td th:text="#{panel.module.sn}">屏体模组序列号</td>
+					<td colspan="3">
+						<input class="easyui-textbox" style="width: 83%" name="panelModuleSn">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{oc.model}">玻璃型号</td>
+					<td>
+						<input class="easyui-textbox" name="ocModel" data-options="required:true">
+					</td>
+					<td th:text="#{oc.pcbi.sn}">玻璃序列号</td>
+					<td colspan="3">
+						<input class="easyui-textbox" style="width: 83%" name="ocSn">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{phenomenon.desc}">故障现象描述</td>
+					<td colspan="5">
+						<input class="easyui-textbox" style="width: 90%" name="failureRemark" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{mura.test.result}">对调试验/MURA测试结果</td>
+					<td colspan="5">
+						<input class="easyui-textbox" style="width: 90%" name="exchangeTestRs" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{other.checking.result}">其它试验方法/结果</td>
+					<td colspan="5">
+						<input class="easyui-textbox" style="width: 90%" name="otherCheckRs">
+					</td>
+				</tr>
+			</table>
+
+			<!-- 上传图片 -->
+			<div>
+				<a id="addImg" class="easyui-linkbutton" data-options="disabled:true,plain:true,iconCls:'icon-add'" onclick="upImg()" th:text="#{bnt.upload.img}">上传图片</a>
+				<a id="delImg" class="easyui-linkbutton" data-options="disabled:true,plain:true,iconCls:'icon-cancel'" onclick="delImg()" th:text="#{bnt.del}">删除</a>
+			</div>
+			<table th:replace="x::tabImg" />
+		</form>
+	</div>
+
+	<div id="ww-cancel" class="easyui-dialog dlgForm1" data-options="height:300,closed:true">
+		<form method="post" action="panel/custcpt/confirm">
+			<input type="hidden" name="complaintId">
+			<input type="hidden" name="status" value="1">
+			<table>
+				<tr>
+					<td th:text="#{cancel.remark}">撤消描述</td>
+					<td>
+						<input class="easyui-textbox" style="height: 100px" name="logRemark" data-options="multiline:true,required:true">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+	<div id="ww-confirm" class="easyui-dialog dlgForm1" data-options="height:400,closed:true">
+		<form method="post" action="panel/custcpt/confirm">
+			<input type="hidden" name="complaintId">
+			<input type="hidden" name="status">
+			<table>
+				<tr>
+					<td th:text="#{isAgree}">是否同意</td>
+					<td>
+						<input class="easyui-combobox" id="isAgree" name="isAgree" value="1" data-options="url:'console/sys/dict/selDict/9000',panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{remark}">备注</td>
+					<td>
+						<input class="easyui-textbox" style="height: 100px" name="logRemark" data-options="multiline:true">
+					</td>
+				</tr>
+				<tr>
+					<td id="csReplyTypeTd" />
+					<td>
+						<input class="easyui-textbox" id="csReplyType" data-options="disabled:true">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{cs.reply}">客服回复</td>
+					<td>
+						<input class="easyui-textbox" style="height: 100px" id="csReply" data-options="multiline:true,disabled:true">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+	<div id="ww-closed" class="easyui-dialog dlgForm1" data-options="height:400,closed:true">
+		<form method="post" action="panel/custcpt/confirmClosed">
+			<input type="hidden" name="ids">
+			<table>
+				<tr>
+					<td th:text="#{closed.type}">闭环意见类型</td>
+					<td>
+						<input class="easyui-combobox" name="status" data-options="url:'console/sys/dict/selDict/1115',required:true,panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{remark}">备注</td>
+					<td>
+						<input class="easyui-textbox" style="height: 100px" name="logRemark" data-options="multiline:true,required:true">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{cs.appClosed.reason}">客服申请闭环原因</td>
+					<td>
+						<input class="easyui-textbox" style="height: 100px" id="appClosedReason" data-options="multiline:true,disabled:true">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+	<!-- 订单弹出框 -->
+	<div id="ww-order" class="dlglist2" data-options="closed:true">
+		<form>
+			<input type="hidden" name='custName'>
+			<input type="hidden" name='cptCustSelOrder' value="1">
+			<table class='qryTable'>
+				<tr>
+					<td th:text="#{orderNo}">订单号</td>
+					<td>
+						<input class='easyui-textbox' style="width: 150px;" name='orderNo'>
+					</td>
+					<td th:text="#{cust.orderNo}">客户订单号</td>
+					<td>
+						<input class="easyui-textbox" style="width: 150px;" name="custOrderNo">
+					</td>
+					<td th:text="#{brand}">品牌</td>
+					<td>
+						<input class='easyui-textbox' style="width: 150px;" name='brand'>
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{chassis}">机芯</td>
+					<td>
+						<input class='easyui-textbox' style="width: 150px;" name='movement'>
+					</td>
+					<td th:text="#{ourModel}">我司型号</td>
+					<td>
+						<input class='easyui-textbox' style="width: 150px;" name='ourModel'>
+					</td>
+					<td th:text="#{custModel}">买家型号</td>
+					<td>
+						<input class="easyui-textbox" style="width: 150px;" name="custModel">
+					</td>
+				</tr>
+			</table>
+		</form>
+		<table id="dg-order">
+			<thead>
+				<tr>
+					<th data-options="field:'orderNo',width:'15%'" th:text="#{orderNo}">订单号</th>
+					<th data-options="field:'custOrderNo',width:'20%'" th:text="#{cust.orderNo}">客户订单号</th>
+					<th data-options="field:'brand',width:'17%'" th:text="#{brand}">品牌</th>
+					<th data-options="field:'movement',width:'16%'" th:text="#{chassis}">机芯</th>
+					<th data-options="field:'ourModel',width:'16%'" th:text="#{ourModel}">我司型号</th>
+					<th data-options="field:'custModel',width:'16%'" th:text="#{custModel}">买家型号</th>
+				</tr>
+			</thead>
+		</table>
+		<script type="text/javascript">
+            if (g_roleType == 'C') {
+                $("#ww-order input[name=custName]").val(g_userName);
+            }
+        </script>
+	</div>
+
+	<div id="excelUpload" />
+	<div id="imgUpload" />
+	<div th:replace="panel/cust/custCptView::custCpt" />
+</body>
+</html>

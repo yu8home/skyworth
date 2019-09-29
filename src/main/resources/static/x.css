@@ -1,0 +1,143 @@
+body {
+	margin: 0; padding: 0; font-size: 14px; font-family: verdana, helvetica, arial, sans-serif;
+}
+
+form table {
+	width: 100%; padding: 5px;
+}
+
+input[type=checkbox] {
+	vertical-align: middle;
+}
+
+fieldset {
+	border: 1px solid #D4D4D4; text-align: left; vertical-align: middle;
+}
+
+.bntTable {
+	width: 100%;
+}
+
+.overflow-hidden {
+	overflow: hidden;
+}
+
+.navbar {
+	height: 45px; color: white; background-color: #3c8dbc; color: white;
+}
+
+.navbar i {
+	margin-right: 5px;
+}
+
+.navbar>div {
+	float: left; padding-left: 60px; line-height: 43px; font-size: 18px; text-shadow: 3px 3px 7px #000;
+}
+
+.navbar>ul {
+	float: right; left: auto; font-size: 14px; margin: 0 30px 0 0; list-style: none;
+}
+
+.navbar>ul>li {
+	display: inline-block; position: relative;
+}
+
+.navbar>ul>li:first-child {
+	padding-right: 15px;
+}
+
+.navbar>ul>li>a {
+	text-decoration: none; color: white; background-color: transparent; display: block; padding: 0 15px; line-height: 43px;
+}
+
+.navbar>ul>li>a:hover {
+	text-decoration: none; color: #293846; background-color: #eee; cursor: pointer;
+}
+
+.tabImg {
+	border-color: #ccc; border-collapse: collapse;
+}
+
+.tabImg td {
+	border: 1px solid #ccc; text-align: center; vertical-align: middle;
+}
+
+.tabImg-td-red {
+	border: 2px solid red !important;
+}
+
+.dgtoolbar {
+	padding: 8px; background-color: white;
+}
+
+.dgtoolbar div {
+	float: right;
+}
+
+.qryDiv,.qryTable {
+	width: 100%; padding: 5px; vertical-align: middle; background-color: white;
+}
+
+.qryDiv td:nth-child(even) {
+	text-align: right;
+}
+
+.qryTable td:nth-child(odd) {
+	padding-right: 5px; text-align: right;
+}
+
+.qryTable td:nth-child(even) {
+	text-align: left;
+}
+
+.dlgForm1 {
+	width: 450px;
+}
+
+.dlgForm1 td:nth-child(odd) {
+	width: 40%; padding-right: 5px; text-align: right;
+}
+
+.dlgForm1 td:nth-child(even) {
+	width: 60%; text-align: left;
+}
+
+.dlgForm2 {
+	width: 750px;
+}
+
+.dlgForm2 td:nth-child(odd) {
+	width: 25%; padding-right: 5px; text-align: right;
+}
+
+.dlgForm2 td:nth-child(even) {
+	width: 25%; text-align: left;
+}
+
+.maxDlgForm td:nth-child(odd) {
+	width: 16.3%; padding-right: 5px; text-align: right;
+}
+
+.maxDlgForm td:nth-child(even) {
+	width: 17%; text-align: left;
+}
+
+.tabsTable {
+	width: 100%; margin-top: 5px;
+}
+
+.tabsTable td:nth-child(odd) {
+	width: 16.3%; padding-right: 5px; text-align: right;
+}
+
+.tabsTable td:nth-child(even) {
+	width: 17%; text-align: left;
+}
+
+.dlglist1 {
+	width: 600px;
+}
+
+.dlglist2 {
+	width: 850px;
+}

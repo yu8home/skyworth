@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:include="x::head('角色管理')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'console/sys/role/qryForPage',
+            fit : true,
+            toolbar : '.dgtoolbar',
+            onSelect : function(i, r) {
+                $("#editBnt").linkbutton('disable');
+                if (r.roleCode != "admin") {
+                    $("#editBnt").linkbutton('enable');// 超级管理员不能编辑
+                }
+            },
+            onLoadSuccess : function(i, r) {
+                $("#editBnt").linkbutton('disable');
+            }
+        });
+
+        $('#roleType').combobox({
+            onChange : function(n, o) {
+                roleTypeChg(n);
+            }
+        });
+    });
+
+    //授权类型变更
+    function roleTypeChg(v) {
+        var opts = $('#tt').tree('options');
+        opts.url = 'console/sys/menu/qryMenuAuthTree';
+        opts.queryParams = {
+            roleType : v
+        };
+        opts.onLoadSuccess = initWin;
+        $('#tt').tree('reload');
+    }
+
+    function add() {
+        roleTypeChg('M');
+        $('#ww').editFormDialog({
+            title : '角色管理-新建',
+            dg : 'dg',
+            isdatagrid : true,
+            submitBefore : checkFrm,
+            bnts : [ {
+                url : 'console/sys/role/add'
+            } ]
+        });
+    }
+
+    function edit() {
+        var std = $('#dg').datagrid("getSelected");
+        $('#frm').form('load', std);
+
+        // 加载：权限树
+        var opts = $('#tt').tree('options');
+        opts.url = 'console/sys/menu/qryMenuAuthTree';
+        opts.queryParams = {
+            roleType : std.roleType
+        };
+        opts.onLoadSuccess = function() {
+            initWin();
+            if (std.authIds) {
+                var authIds = std.authIds.split(",");
+                $.each(authIds, function(i, n) {
+                    $('#tt').tree('check', $('#tt').tree('find', n).target);
+                });
+            }
+        };
+        $('#tt').tree('reload');
+
+        $('#ww').editFormDialog({
+            title : '角色管理-编辑',
+            dg : 'dg',
+            isdatagrid : true,
+            submitBefore : checkFrm,
+            bnts : [ {
+                url : 'console/sys/role/update'
+            } ]
+        });
+    }
+
+    function initWin() {
+        var root = $("#tt").tree("getRoot").target;
+        $("#tt").tree("uncheck", root);
+        $("#tt").tree("collapseAll", root);
+        $('#tt').find('.tree-node-selected').removeClass('tree-node-selected');
+    }
+
+    function checkFrm() {
+        var authIds = [];
+        var nodes = $('#tt').tree('getChecked');
+        if (!!nodes && nodes.length > 0) {
+            $.each(nodes, function(i, n) {
+                authIds.push(n.menuId);
+            });
+            $('#authIds').val(authIds.join(","));
+        } else {
+            $.messager.show({
+                msg : '请选择权限树！'
+            });
+            return false;
+        }
+        return true;
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<a id="editBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="edit()">编辑</a>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'roleId',hidden:true" />
+				<th data-options="field:'roleCode',width:'20%'">角色编码</th>
+				<th data-options="field:'name',width:'40%'">角色名称</th>
+				<th data-options="field:'roleTypeName',width:'20%'">授权类型</th>
+				<th data-options="field:'isValid',width:'20%',formatter:yesOrNoRender">是否有效</th>
+			</tr>
+		</thead>
+	</table>
+
+	<div id="ww" class="easyui-dialog dlgForm2" data-options="closed:true">
+		<form id="frm" method="post">
+			<input type="hidden" name="roleId">
+			<input type="hidden" name="authIds" id="authIds">
+			<table>
+				<tr>
+					<td>角色编码</td>
+					<td>
+						<input class="easyui-textbox" name="roleCode" data-options="required:true">
+					</td>
+					<td>角色名称</td>
+					<td>
+						<input class="easyui-textbox" name="name" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>授权类型</td>
+					<td>
+						<input class="easyui-combobox" id="roleType" name="roleType" value="M" data-options="url:'console/sys/dict/selDictEx/9002/A',panelHeight:'auto'">
+					</td>
+					<td>是否有效</td>
+					<td>
+						<input class="easyui-combobox" name="isValid" value="1" data-options="url:'console/sys/dict/selDict/9000',panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td colspan="4">
+						<fieldset>
+							<legend>权限树</legend>
+							<div style="overflow: auto; height: 300px;">
+								<ul id="tt" class="easyui-tree" data-options="animate:true,checkbox:true" />
+							</div>
+						</fieldset>
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</body>
+</html>

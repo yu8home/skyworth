@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.console.sys.logsystem.dao.LogSystemMapper">
+
+    <sql id="Base_Column_List">
+		<![CDATA[
+            select t.syslog_id,
+                   t.func_name,
+                   t.class_method,
+                   t.method_param,
+                   t.ip,
+                   t.runtime,
+                   t.is_success,
+                   t.err_msg,
+                   concat(f.name, '（', f.user_code, '）') as create_user_name,
+                   date_format(t.create_time, '%Y-%m-%d %H:%i:%S') as create_time
+              from s_log_system t, s_user f
+             where t.create_user_id = f.user_id
+        ]]>
+	</sql>
+
+    <select id="qryForList" resultType="logSystem">
+        <include refid="Base_Column_List"/>
+        <if test="funcName != null and funcName != ''">
+            and t.func_name like concat('%', #{funcName}, '%')
+        </if>
+        <if test="classMethod != null and classMethod != ''">
+            and t.class_method like concat('%', #{classMethod}, '%')
+        </if>
+        <if test="ip != null and ip != ''">
+            and t.ip = #{ip}
+        </if>
+        <if test="isSuccess != null">
+            and t.is_success = #{isSuccess}
+        </if>
+        <if test="createUserName != null and createUserName != ''">
+            and f.name like concat('%', #{createUserName}, '%')
+        </if>
+        <!-- 只查询当天 -->
+        <if test="createTime != null and createTime != ''">
+            and t.create_time between str_to_date(#{createTime}, '%Y-%m-%d') and str_to_date(#{createTime}, '%Y-%m-%d') + 1
+        </if>
+        order by t.syslog_id desc
+    </select>
+
+    <select id="getInfo" resultType="logSystem">
+        <include refid="Base_Column_List"/>
+        and t.syslog_id = #{syslogId}
+    </select>
+
+    <insert id="insert">
+		<![CDATA[
+            insert into s_log_system
+              (func_name,
+               class_method,
+               method_param,
+               ip,
+               runtime,
+               is_success,
+               err_msg,
+               create_user_id)
+            values
+              (#{funcName},
+               #{classMethod},
+               #{methodParam},
+               #{ip},
+               #{runtime},
+               #{isSuccess},
+               #{errMsg},
+               #{createUserId})
+        ]]>
+	</insert>
+
+</mapper>

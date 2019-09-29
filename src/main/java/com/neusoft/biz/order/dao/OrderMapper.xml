@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.order.dao.OrderMapper">
+
+    <sql id="Base_Column_List">
+		<![CDATA[
+            select t.order_id,
+                   t.order_no,
+                   t.prefix,
+                   t.month,
+                   t.order_date,
+                   t.sale_order_num,
+                   t.cust_order_no,
+                   t.order_type,
+                   t.delivery_form,
+                   t.pid,
+                   t.screen,
+                   t.size,
+                   t.movement,
+                   t.our_model,
+                   t.cust_model,
+                   t.order_qty,
+                   t.brand,
+                   t.sold_to_country,
+                   t.cust_name,
+                   t.receiver,
+                   t.business_leader,
+                   t.business_group,
+                   t.payment_method,
+                   t.national_standards_certification,
+                   t.is_check,
+                   t.is_paid_optional_damage,
+                   t.free_preparation_loss,
+                   t.standard_allowance_amount,
+                   t.is_risk_order,
+                   t.risk_cause_analysis,
+                   t.construction_date,
+                   t.one_review_period,
+                   t.transfer_order_date,
+                   t.receipt_order_date,
+                   t.delivery_period,
+                   t.delivery_change_reason,
+                   t.receiver_days,
+                   t.delivery_change_period,
+                   t.total_days,
+                   t.movement_model,
+                   t.area,
+                   t.processing_methods,
+                   t.inter_trade_terms,
+                   t.inter_trade_remark,
+                   t.company,
+                   t.remark,
+                   t.create_user_id,
+                   (select f.name from s_user f where f.user_id = t.create_user_id) as create_user_name,
+                   date_format(t.create_time, '%Y-%m-%d %H:%i:%S') as create_time,
+                   t.mod_user_id,
+                   (select f.name from s_user f where f.user_id = t.mod_user_id) as mod_user_name,
+                   date_format(t.mod_time, '%Y-%m-%d %H:%i:%S') as mod_time
+              from d_order t
+        ]]>
+	</sql>
+
+    <select id="qryForList" resultType="order">
+        <include refid="Base_Column_List"/>
+        <where>
+            <if test="orderNo != null and orderNo != ''">and t.order_no like concat('%', #{orderNo}, '%')</if>
+            <if test="custOrderNo != null and custOrderNo != ''">and t.cust_order_no like concat('%', #{custOrderNo}, '%')</if>
+            <if test="orderDateStart != null and orderDateStart != ''">and t.order_date &gt;= #{orderDateStart}</if>
+            <if test="orderDateEnd != null and orderDateEnd != ''">and t.order_date &lt;= #{orderDateEnd}</if>
+            <if test="screen != null and screen != ''">and t.screen like concat('%', #{screen}, '%')</if>
+            <if test="movement != null and movement != ''">and t.movement like concat('%', #{movement}, '%')</if>
+            <if test="ourModel != null and ourModel != ''">and t.our_model like concat('%', #{ourModel}, '%')</if>
+            <if test="custModel != null and custModel != ''">and t.cust_model like concat('%', #{custModel}, '%')</if>
+            <if test="prefix != null and prefix != ''">and t.prefix like concat('%', #{prefix}, '%')</if>
+            <if test="brand != null and brand != ''">and t.brand like concat('%', #{brand}, '%')</if>
+            <if test="soldToCountry != null and soldToCountry != ''">and t.sold_to_country like concat('%', #{soldToCountry}, '%')</if>
+            <if test="receiver != null and receiver != ''">and t.receiver like concat('%', #{receiver}, '%')</if>
+            <if test="cptCustSelOrder == null and custName != null and custName != ''">and t.cust_name like concat('%', #{custName}, '%')</if>
+            <if test="cptCustSelOrder != null">
+                <![CDATA[
+				   and (t.cust_name = #{custName} or exists
+				        (select a.cust_name
+				           from b_customer a
+				          where a.cust_name = #{custName}
+				            and (a.customer_members = t.cust_name or
+				                a.customer_members like concat(t.cust_name, '，%') or
+				                a.customer_members like concat('%，', t.cust_name, '，%') or
+				                a.customer_members like concat('%，', t.cust_name))
+				         
+				         ))
+				]]>
+            </if>
+        </where>
+        order by t.order_id desc
+    </select>
+
+    <select id="getInfo" resultType="order">
+        <include refid="Base_Column_List"/>
+        where t.order_id = #{orderId}
+    </select>
+
+    <insert id="insert">
+		<![CDATA[
+            insert into d_order
+              (order_no,
+               prefix,
+               month,
+               order_date,
+               sale_order_num,
+               cust_order_no,
+               order_type,
+               pid,
+               screen,
+               size,
+               movement,
+               our_model,
+               cust_model,
+               order_qty,
+               brand,
+               sold_to_country,
+               cust_name,
+               receiver,
+               business_leader,
+               business_group,
+               payment_method,
+               national_standards_certification,
+               is_check,
+               is_paid_optional_damage,
+               free_preparation_loss,
+               standard_allowance_amount,
+               is_risk_order,
+               risk_cause_analysis,
+               construction_date,
+               one_review_period,
+               transfer_order_date,
+               receipt_order_date,
+               delivery_period,
+               delivery_form,
+               delivery_change_reason,
+               receiver_days,
+               delivery_change_period,
+               total_days,
+               movement_model,
+               area,
+               processing_methods,
+               inter_trade_terms,
+               inter_trade_remark,
+               company,
+               remark,
+               create_user_id)
+            values
+              (#{orderNo},
+               #{prefix},
+               #{month},
+               #{orderDate},
+               #{saleOrderNum},
+               #{custOrderNo},
+               #{orderType},
+               #{pid},
+               #{screen},
+               #{size},
+               #{movement},
+               #{ourModel},
+               #{custModel},
+               #{orderQty},
+               #{brand},
+               #{soldToCountry},
+               #{custName},
+               #{receiver},
+               #{businessLeader},
+               #{businessGroup},
+               #{paymentMethod},
+               #{nationalStandardsCertification},
+               #{isCheck},
+               #{isPaidOptionalDamage},
+               #{freePreparationLoss},
+               #{standardAllowanceAmount},
+               #{isRiskOrder},
+               #{riskCauseAnalysis},
+               #{constructionDate},
+               #{oneReviewPeriod},
+               #{transferOrderDate},
+               #{receiptOrderDate},
+               #{deliveryPeriod},
+               #{deliveryForm},
+               #{deliveryChangeReason},
+               #{receiverDays},
+               #{deliveryChangePeriod},
+               #{totalDays},
+               #{movementModel},
+               #{area},
+               #{processingMethods},
+               #{interTradeTerms},
+               #{interTradeRemark},
+               #{company},
+               #{remark},
+               #{createUserId})
+        ]]>
+	</insert>
+
+    <update id="update">
+		<![CDATA[
+            update d_order
+               set order_no                         = #{orderNo},
+                   prefix                           = #{prefix},
+                   month                            = #{month},
+                   order_date                       = #{orderDate},
+                   sale_order_num                   = #{saleOrderNum},
+                   cust_order_no                    = #{custOrderNo},
+                   order_type                       = #{orderType},
+                   pid                              = #{pid},
+                   screen                           = #{screen},
+                   size                             = #{size},
+                   movement                         = #{movement},
+                   our_model                        = #{ourModel},
+                   cust_model                       = #{custModel},
+                   order_qty                        = #{orderQty},
+                   brand                            = #{brand},
+                   sold_to_country                  = #{soldToCountry},
+                   cust_name                        = #{custName},
+                   receiver                         = #{receiver},
+                   business_leader                  = #{businessLeader},
+                   business_group                   = #{businessGroup},
+                   payment_method                   = #{paymentMethod},
+                   national_standards_certification = #{nationalStandardsCertification},
+                   is_check                         = #{isCheck},
+                   is_paid_optional_damage          = #{isPaidOptionalDamage},
+                   free_preparation_loss            = #{freePreparationLoss},
+                   standard_allowance_amount        = #{standardAllowanceAmount},
+                   is_risk_order                    = #{isRiskOrder},
+                   risk_cause_analysis              = #{riskCauseAnalysis},
+                   construction_date                = #{constructionDate},
+                   one_review_period                = #{oneReviewPeriod},
+                   transfer_order_date              = #{transferOrderDate},
+                   receipt_order_date               = #{receiptOrderDate},
+                   delivery_period                  = #{deliveryPeriod},
+                   delivery_form                    = #{deliveryForm},
+                   delivery_change_reason           = #{deliveryChangeReason},
+                   receiver_days                    = #{receiverDays},
+                   delivery_change_period           = #{deliveryChangePeriod},
+                   total_days                       = #{totalDays},
+                   movement_model                   = #{movementModel},
+                   area                             = #{area},
+                   processing_methods               = #{processingMethods},
+                   inter_trade_terms                = #{interTradeTerms},
+                   inter_trade_remark               = #{interTradeRemark},
+                   company                          = #{company},
+                   remark                           = #{remark},
+                   mod_user_id                      = #{modUserId},
+                   mod_time                         = now()
+             where order_id = #{orderId}
+        ]]>
+	</update>
+
+    <!-- 新建、编辑：查询订单号是否有重复 -->
+    <select id="qryExistsOrderNo" resultType="order">
+        select t.order_id, t.order_no from d_order t where t.order_no in
+        <foreach item="e" collection='orderNo.split(",")' separator="," open="(" close=")">
+            #{e}
+        </foreach>
+        <if test="orderId != null">and t.order_id != #{orderId}</if>
+    </select>
+
+    <select id="qryUsedOrder" resultType="string">
+        select distinct f.order_no from d_panel_cpt t, d_order f where (t.order_id = f.order_id or t.order_no = f.order_no) and f.order_id in
+        <foreach item="e" collection='ids.split(",")' separator="," open="(" close=")">
+            #{e}
+        </foreach>
+    </select>
+
+    <delete id="delete">
+        delete from d_order where order_id in
+        <foreach item="e" collection='ids.split(",")' separator="," open="(" close=")">
+            #{e}
+        </foreach>
+    </delete>
+
+</mapper>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('KPI-1')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'report/qryKPIOne',
+            fit : true,
+            toolbar : '.dgtoolbar'
+        });
+    });
+
+    function doSearch() {
+        $('#dg').datagrid({
+            queryParams : $('.dgtoolbar form').serializeForm()
+        });
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<form>
+			初审意见时间
+			<input class="Wdate" id="firstInitialTimeStart" name="firstInitialTimeStart" onfocus="WdatePicker({isShowClear:true,readOnly:true,maxDate:'%y-%M-%d'})">
+			-
+			<input class="Wdate" id="firstInitialTimeEnd" name="firstInitialTimeEnd" onfocus="WdatePicker({isShowClear:true,readOnly:true,minDate:'#F{$dp.$D(\'firstInitialTimeStart\')}',maxDate:'%y-%M-%d'})">
+			&nbsp;&nbsp;&nbsp;&nbsp;
+			<a class="easyui-linkbutton" data-options="iconCls:'icon-search'" onclick="doSearch()">查询</a>
+			（初审意见时间-反馈客服时间=2个工作日）
+		</form>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'cust_serv_name',width:'25%'">客服专员</th>
+				<th data-options="field:'goodcnt',width:'20%'">达标数量</th>
+				<th data-options="field:'badcnt',width:'20%'">不达标数量</th>
+				<th data-options="field:'total',width:'15%'">合计</th>
+				<th data-options="field:'rpercent',width:'20%'">超时率(%)</th>
+			</tr>
+		</thead>
+	</table>
+</body>
+</html>

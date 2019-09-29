@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('订单')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'order/qryForPage',
+            fit : true,
+            singleSelect : false,
+            toolbar : '.dgtoolbar',
+            onSelect : function(i, r) {
+                $("#editBnt, #viewBnt, #delBnt").linkbutton('disable');
+                var rows = $('#dg').datagrid('getChecked');
+                if (rows.length == 1) {
+                    $("#editBnt, #viewBnt, #delBnt").linkbutton('enable');
+                } else if (rows.length > 1) {
+                    $("#delBnt").linkbutton('enable');
+                }
+            },
+            onLoadSuccess : function(i, r) {
+                $("#editBnt, #viewBnt, #delBnt").linkbutton('disable');
+            }
+        });
+    });
+
+    function add() {
+        $('#ww').editFormDialog({
+            title : '订单-新建',
+            dg : 'dg',
+            maximized : true,
+            bnts : [ {
+                url : 'order/add'
+            } ]
+        });
+    }
+
+    function edit() {
+        $('#frm').form('load', 'order/edit?orderId=' + $('#dg').datagrid("getSelected").orderId);
+        $('#ww').editFormDialog({
+            title : '订单-编辑',
+            dg : 'dg',
+            maximized : true,
+            bnts : [ {
+                url : 'order/update'
+            } ]
+        });
+    }
+
+    function del() {
+        $.messager.confirm(g_tip_title, '[[#{confirm.deletion}]]', function(r) {
+            if (r) {
+                var ids = [];
+                var rows = $('#dg').datagrid('getChecked');
+                for (var i = 0; i < rows.length; i++) {
+                    ids.push(rows[i].orderId);
+                }
+                $.post('order/delete', {
+                    ids : ids.join(",")
+                }, function(r) {
+                    if (r.code) {
+                        tipSuccess();
+                        $('#dg').datagrid("reload");
+                    } else {
+                        tipFail(r.data);
+                    }
+                });
+            }
+        });
+    }
+
+    function view() {
+        var frm = $('#frm');
+        frm.form('load', 'order/edit?orderId=' + $('#dg').datagrid("getSelected").orderId);
+        frm.form("disable");
+
+        $('#ww').dialog({
+            title : '订单-查看',
+            maximized : true,
+            toolbar : null,
+            onClose : function() {
+                frm.form('reset');
+            }
+        }).dialog('center').dialog('open');
+    }
+
+    function doSearch() {
+        $('#qryFrmDiv').qryFormDialog({
+            dg : 'dg'
+        });
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<shiro:hasPermission name="order:add">
+			<a class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="add()">新建</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="order:edit">
+			<a id="editBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="edit()">编辑</a>
+			<a id="delBnt" class="easyui-linkbutton" data-options="iconCls:'icon-remove'" onclick="del()" th:text="#{bnt.del}">删除</a>
+		</shiro:hasPermission>
+		<a id="viewBnt" class="easyui-linkbutton" data-options="iconCls:'icon-view'" onclick="view()">查看</a>
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-search'" onclick="doSearch()">查询</a>
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-download'" onclick="xlsDownload('order/xlsDownload/order.xlsx')">模板下载</a>
+		<shiro:hasPermission name="order:excelImport">
+			<a class="easyui-linkbutton" data-options="iconCls:'icon-excel'" onclick="$('#excelUpload').excelUpload({url:'order/excelImport', dg:'dg'})">导入</a>
+		</shiro:hasPermission>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'ck',checkbox:true" />
+				<th data-options="field:'orderNo',width:'10%'">订单号</th>
+				<th data-options="field:'custOrderNo',width:'10%'">客户订单号</th>
+				<th data-options="field:'prefix',width:'10%'">序列号前缀</th>
+				<th data-options="field:'orderDate',width:'10%'">下单日期</th>
+				<th data-options="field:'screen',width:'18%'">配屏</th>
+				<th data-options="field:'movement',width:'10%'">机芯</th>
+				<th data-options="field:'ourModel',width:'10%'">我司型号</th>
+				<th data-options="field:'brand',width:'10%'">品牌</th>
+				<th data-options="field:'soldToCountry',width:'15%'">销往国家</th>
+				<th data-options="field:'custName',width:'35%'">客户名称</th>
+				<th data-options="field:'receiver',width:'10%'">接单人</th>
+			</tr>
+		</thead>
+	</table>
+
+
+	<!-- 查询条件 -->
+	<div id="qryFrmDiv" class="easyui-dialog dlgForm2" data-options="height:350,closed:true">
+		<form>
+			<table class="qryTable">
+				<tr>
+					<td>订单号</td>
+					<td>
+						<input class="easyui-textbox" name="orderNo">
+					</td>
+					<td>客户订单号</td>
+					<td>
+						<input class="easyui-textbox" name="custOrderNo">
+					</td>
+				</tr>
+				<tr>
+					<td>下单日期(始)</td>
+					<td>
+						<input class="Wdate" id="orderDateStart" name="orderDateStart" onfocus="WdatePicker({isShowClear:true,readOnly:true,maxDate:'%y-%M-%d'})">
+					</td>
+					<td>下单日期(止)</td>
+					<td>
+						<input class="Wdate" id="orderDateEnd" name="orderDateEnd" onfocus="WdatePicker({isShowClear:true,readOnly:true,minDate:'#F{$dp.$D(\'orderDateStart\')}',maxDate:'%y-%M-%d'})">
+					</td>
+				</tr>
+				<tr>
+					<td>序列号前缀</td>
+					<td>
+						<input class="easyui-textbox" name="prefix">
+					</td>
+					<td>配屏</td>
+					<td>
+						<input class="easyui-textbox" name="screen">
+					</td>
+				</tr>
+				<tr>
+					<td>机芯</td>
+					<td>
+						<input class="easyui-textbox" name="movement">
+					</td>
+					<td>我司型号</td>
+					<td>
+						<input class="easyui-textbox" name="ourModel">
+					</td>
+				</tr>
+				<tr>
+					<td>品牌</td>
+					<td>
+						<input class="easyui-textbox" name="brand">
+					</td>
+					<td>销往国家</td>
+					<td>
+						<input class="easyui-textbox" name="soldToCountry">
+					</td>
+				</tr>
+				<tr>
+					<td>客户名称</td>
+					<td>
+						<input class="easyui-textbox" name="custName">
+					</td>
+					<td>接单人</td>
+					<td>
+						<input class="easyui-textbox" name="receiver">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+
+	<!-- 编辑 -->
+	<div id="ww" class="easyui-dialog maxDlgForm" data-options="closed:true">
+		<form id="frm" method="post">
+			<input type="hidden" name="orderId">
+			<table>
+				<tr>
+					<td>订单号</td>
+					<td>
+						<input class="easyui-textbox" name="orderNo" data-options="required:true">
+					</td>
+					<td>序列号前缀</td>
+					<td>
+						<input class="easyui-textbox" name="prefix" data-options="required:true">
+					</td>
+					<td>月份</td>
+					<td>
+						<input class="easyui-textbox" name="month" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>下单日期</td>
+					<td>
+						<input class="easyui-datebox" name="orderDate" data-options="required:true">
+					</td>
+					<td>销单号</td>
+					<td>
+						<input class="easyui-textbox" name="saleOrderNum" data-options="required:true">
+					</td>
+					<td>客户订单号</td>
+					<td>
+						<input class="easyui-textbox" name="custOrderNo" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>订单类型</td>
+					<td>
+						<input class="easyui-textbox" name="orderType" data-options="required:true">
+					</td>
+					<td>走货方式</td>
+					<td>
+						<input class="easyui-textbox" name="deliveryForm" data-options="required:true">
+					</td>
+					<td>PID</td>
+					<td>
+						<input class="easyui-textbox" name="pid" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>配屏</td>
+					<td>
+						<input class="easyui-textbox" name="screen" data-options="required:true">
+					</td>
+					<td>尺寸</td>
+					<td>
+						<input class="easyui-numberbox" name="size" data-options="required:true">
+					</td>
+					<td>机芯</td>
+					<td>
+						<input class="easyui-textbox" name="movement" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>我司型号</td>
+					<td>
+						<input class="easyui-textbox" name="ourModel" data-options="required:true">
+					</td>
+					<td>买家型号</td>
+					<td>
+						<input class="easyui-textbox" name="custModel" data-options="required:true">
+					</td>
+					<td>订单量</td>
+					<td>
+						<input class="easyui-numberbox" name="orderQty" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>品牌</td>
+					<td>
+						<input class="easyui-textbox" name="brand" data-options="required:true">
+					</td>
+					<td>销往国家</td>
+					<td>
+						<input class="easyui-textbox" name="soldToCountry" data-options="required:true">
+					</td>
+					<td>客户名称</td>
+					<td>
+						<input class="easyui-textbox" name="custName" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>接单人</td>
+					<td>
+						<input class="easyui-textbox" name="receiver" data-options="required:true">
+					</td>
+					<td>业务区负责人</td>
+					<td>
+						<input class="easyui-textbox" name="businessLeader" data-options="required:true">
+					</td>
+					<td>业务组</td>
+					<td>
+						<input class="easyui-textbox" name="businessGroup" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>付款方式</td>
+					<td>
+						<input class="easyui-textbox" name="paymentMethod" data-options="required:true">
+					</td>
+					<td>国家标准及认证</td>
+					<td>
+						<input class="easyui-textbox" name="nationalStandardsCertification">
+					</td>
+					<td>是否验货</td>
+					<td>
+						<input class="easyui-combobox" name="isCheck" value="1" data-options="url:'console/sys/dict/selDict/9000',panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td>付费自选备损</td>
+					<td>
+						<input class="easyui-combobox" name="isPaidOptionalDamage" value="1" data-options="url:'console/sys/dict/selDict/9000',panelHeight:'auto'">
+					</td>
+					<td>免费备损</td>
+					<td>
+						<input class="easyui-textbox" name="freePreparationLoss">
+					</td>
+					<td>标准备损金额</td>
+					<td>
+						<input class="easyui-textbox" name="standardAllowanceAmount">
+					</td>
+				</tr>
+				<tr>
+					<td>是否风险订单</td>
+					<td>
+						<input class="easyui-combobox" name="isRiskOrder" value="1" data-options="url:'console/sys/dict/selDict/9000',panelHeight:'auto'">
+					</td>
+					<td>风险原因分析</td>
+					<td>
+						<input class="easyui-textbox" name="riskCauseAnalysis">
+					</td>
+					<td>建销单日期</td>
+					<td>
+						<input class="easyui-datebox" name="constructionDate" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>一次评审完成期</td>
+					<td>
+						<input class="easyui-datebox" name="oneReviewPeriod">
+					</td>
+					<td>转工单日期</td>
+					<td>
+						<input class="easyui-datebox" name="transferOrderDate">
+					</td>
+					<td>接单走货日期</td>
+					<td>
+						<input class="easyui-datebox" name="receiptOrderDate" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>走货期</td>
+					<td>
+						<input class="easyui-datebox" name="deliveryPeriod" data-options="required:true">
+					</td>
+					<td>交期更改原因</td>
+					<td>
+						<input class="easyui-textbox" name="deliveryChangeReason">
+					</td>
+					<td>接单天数</td>
+					<td>
+						<input class="easyui-numberbox" name="receiverDays" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>走货期更改天数</td>
+					<td>
+						<input class="easyui-numberbox" name="deliveryChangePeriod" data-options="required:true">
+					</td>
+					<td>合计天数</td>
+					<td>
+						<input class="easyui-numberbox" name="totalDays" data-options="required:true">
+					</td>
+					<td>机芯\机型</td>
+					<td>
+						<input class="easyui-textbox" name="movementModel">
+					</td>
+				</tr>
+				<tr>
+					<td>国际贸易条款</td>
+					<td>
+						<input class="easyui-textbox" name="interTradeTerms" data-options="required:true">
+					</td>
+					<td>片区</td>
+					<td>
+						<input class="easyui-textbox" name="area" data-options="required:true">
+					</td>
+					<td>加工方式</td>
+					<td>
+						<input class="easyui-textbox" name="processingMethods">
+					</td>
+				</tr>
+				<tr>
+					<td>国际贸易备注</td>
+					<td>
+						<input class="easyui-textbox" name="interTradeRemark">
+					</td>
+					<td>公司</td>
+					<td>
+						<input class="easyui-textbox" name="company">
+					</td>
+				</tr>
+				<tr>
+					<td>备注</td>
+					<td colspan="5">
+						<input class="easyui-textbox" style="width: 90%; height: 60px" name="remark" data-options="multiline:true">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+	<div id="excelUpload" />
+</body>
+</html>

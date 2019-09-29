@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('管理员')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'archives/manager/qryForPage',
+            fit : true,
+            toolbar : '.dgtoolbar',
+            onSelect : function(i, r) {
+                $("#editBnt").linkbutton('enable');
+            },
+            onLoadSuccess : function(i, r) {
+                $("#editBnt").linkbutton('disable');
+            }
+        });
+    });
+
+    function add() {
+        $('#ww').editFormDialog({
+            title : '管理员-新建',
+            dg : 'dg',
+            bnts : [ {
+                url : 'archives/manager/add'
+            } ]
+        });
+    }
+
+    function edit() {
+        var std = $('#dg').datagrid("getSelected");
+        $('#frm').form('load', std);
+        $('#ww').editFormDialog({
+            title : '管理员-编辑',
+            dg : 'dg',
+            bnts : [ {
+                url : 'archives/manager/update'
+            } ]
+        });
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<shiro:hasRole name="admin">
+			<a class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="add()">新建</a>
+		</shiro:hasRole>
+		<shiro:hasRole name="admin">
+			<a id="editBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="edit()">编辑</a>
+		</shiro:hasRole>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'managerCode',width:'20%'">管理员账号</th>
+				<th data-options="field:'managerName',width:'60%'">管理员名称</th>
+				<th data-options="field:'isValid',width:'20%',formatter:yesOrNoRender">是否有效</th>
+			</tr>
+		</thead>
+	</table>
+
+	<div id="ww" class="easyui-dialog dlgForm1" data-options="height:220,closed:true">
+		<form id="frm" method="post">
+			<input type="hidden" name="managerCode">
+			<table>
+				<tr>
+					<td>管理员名称</td>
+					<td>
+						<input class="easyui-textbox" name="managerName" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>是否有效</td>
+					<td>
+						<input class="easyui-combobox" name="isValid" value="1" data-options="url:'console/sys/dict/selDict/9000',panelHeight:'auto'">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</body>
+</html>

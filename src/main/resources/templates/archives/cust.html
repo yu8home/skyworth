@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('客户')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'archives/cust/qryForPage',
+            fit : true,
+            toolbar : '.dgtoolbar',
+            onSelect : function(i, r) {
+                $("#editBnt, #delBnt, #copyBnt").linkbutton('enable');
+            },
+            onLoadSuccess : function(i, r) {
+                $("#editBnt, #delBnt, #copyBnt").linkbutton('disable');
+            }
+        });
+    });
+
+    function add() {
+        $('#ww').editFormDialog({
+            title : '客户-新建',
+            dg : 'dg',
+            bnts : [ {
+                url : 'archives/cust/add'
+            } ]
+        });
+    }
+
+    function edit() {
+        var std = $('#dg').datagrid("getSelected");
+        $('#frm').form('load', std);
+        $('#ww').editFormDialog({
+            title : '客户-编辑',
+            dg : 'dg',
+            bnts : [ {
+                url : 'archives/cust/update'
+            } ]
+        });
+    }
+
+    function deleted() {
+        $.messager.confirm('提示', '是否确认“删除”？', function(r) {
+            if (r) {
+                $.post('archives/cust/delete', {
+                    custCode : $('#dg').datagrid("getSelected").custCode
+                }, function(rs) {
+                    tipSuccess();
+                    $('#dg').datagrid('reload');
+                });
+            }
+        });
+    }
+
+    function copyUser() {
+        $.messager.confirm('提示', '是否确认“复制”？', function(r) {
+            if (r) {
+                $.post('archives/cust/copyUser', {
+                    custCode : $('#dg').datagrid("getSelected").custCode
+                }, function(rs) {
+                    tipSuccess();
+                    $('#dg').datagrid('reload');
+                });
+            }
+        });
+    }
+
+    function doSearch(v) {
+        $('#qryFrmDiv').qryFormDialog({
+            dg : 'dg'
+        });
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<shiro:hasPermission name="cust:add">
+			<a class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="add()">新建</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="cust:update">
+			<a id="editBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="edit()">编辑</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="cust:delete">
+			<a id="delBnt" class="easyui-linkbutton" data-options="iconCls:'icon-remove'" onclick="deleted()">删除</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="cust:copyUser">
+			<a id="copyBnt" class="easyui-linkbutton" data-options="iconCls:'icon-copy'" onclick="copyUser()">复制</a>
+		</shiro:hasPermission>
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-search'" onclick="doSearch()">查询</a>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'custCode',width:'8%'">客户账号</th>
+				<th data-options="field:'custName',width:'30%'">客户名称</th>
+				<th data-options="field:'brand',width:'15%'">品牌</th>
+				<th data-options="field:'country',width:'12%'">国家</th>
+				<th data-options="field:'custServName',width:'15%'">关联客服</th>
+				<th data-options="field:'isValid',width:'8%',formatter:yesOrNoRender">是否有效</th>
+				<th data-options="field:'saleName',width:'10%'">销售员</th>
+				<th data-options="field:'warrantyPeriod',width:'10%'">保修期限(月)</th>
+				<th data-options="field:'linkMan',width:'10%'">联系人</th>
+				<th data-options="field:'linkEmail',width:'15%'">联系人邮箱</th>
+			</tr>
+		</thead>
+	</table>
+
+
+	<!-- 查询条件 -->
+	<div id="qryFrmDiv" class="easyui-dialog dlgForm1" data-options="height:300,closed:true">
+		<form>
+			<table class="qryTable">
+				<tr>
+					<td>客户账号</td>
+					<td>
+						<input class="easyui-textbox" name="custCode">
+					</td>
+				</tr>
+				<tr>
+					<td>客户名称</td>
+					<td>
+						<input class="easyui-textbox" name="custName">
+					</td>
+				</tr>
+				<tr>
+					<td>品牌</td>
+					<td>
+						<input class="easyui-textbox" name="brand">
+					</td>
+				</tr>
+				<tr>
+					<td>国家</td>
+					<td>
+						<input class="easyui-textbox" name="country">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+
+	<div id="ww" class="easyui-dialog dlgForm2" data-options="height:450,closed:true">
+		<form id="frm" method="post">
+			<input type="hidden" name="custCode">
+			<table>
+				<tr>
+					<td>客户名称</td>
+					<td colspan="3">
+						<input class="easyui-textbox" name="custName" style="width: 98.8%" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>品牌</td>
+					<td colspan="3">
+						<input class="easyui-textbox" name="brand" style="width: 98.8%" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>国家</td>
+					<td>
+						<input class="easyui-textbox" name="country" data-options="required:true">
+					</td>
+
+					<td>销售员</td>
+					<td>
+						<input class="easyui-textbox" name="saleName" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>保修期限(月)</td>
+					<td>
+						<input class="easyui-numberspinner" name="warrantyPeriod" value="1" data-options="required:true,min:1,max:99">
+					</td>
+
+					<td>联系人</td>
+					<td>
+						<input class="easyui-textbox" name="linkMan" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>联系人邮箱</td>
+					<td>
+						<input class="easyui-textbox" name="linkEmail" data-options="required:true,validType:'email'">
+					</td>
+					<td>是否有效</td>
+					<td>
+						<input class="easyui-combobox" name="isValid" value="1" data-options="url:'console/sys/dict/selDict/9000',panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td>客户归属</td>
+					<td>
+						<input class="easyui-combobox" name="belongEnd" data-options="url:'console/sys/dict/selDict/1117',required:true,panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td>客户成员</td>
+					<td colspan="3">
+						<input class="easyui-textbox" style="width: 98.8%; height: 120px" name="customerMembers" data-options="multiline:true">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</body>
+</html>

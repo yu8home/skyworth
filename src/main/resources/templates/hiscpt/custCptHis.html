@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('客户历史工单')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'form/qryForPage?formMenuType=5',
+            fit : true,
+            toolbar : '.dgtoolbar',
+            onSelect : function(i, r) {
+                $("#viewBnt").linkbutton('enable');
+            },
+            onLoadSuccess : function(i, r) {
+                $("#viewBnt").linkbutton('disable');
+            }
+        });
+
+        tdImgDdlclick('frmView');
+    });
+
+    function doSearch() {
+        $('#qryFrmDiv').qryFormDialog({
+            dg : 'dg'
+        });
+    }
+
+    function view() {
+        var _complaintId = $('#dg').datagrid("getSelected").complaintId;
+        var dlg = $('#custCptView');
+        dlg.find("input,textarea").attr("disabled", true);
+
+        $.post('form/edit', {
+            complaintId : _complaintId
+        }, function(rs) {
+            setViewValue(dlg, rs);
+            editAfterImg('frmView');
+
+            showSolution();
+
+            $('#dg-formlog').datagrid({
+                url : 'form/qryFormLog?complaintId=' + _complaintId
+            });
+
+            dlg.dialog({
+                title : '[[#{panel.formhis.cust}]]-[[#{view}]]',
+                maximized : true,
+                onOpen : function() {
+                    dlg.find(".easyui-tabs").tabs('select', 0);
+                }
+            }).dialog('center').dialog('open');
+        }, 'json');
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<a id="viewBnt" class="easyui-linkbutton" data-options="iconCls:'icon-view'" onclick="view()" th:text="#{bnt.view}">查看</a>
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-search'" onclick="doSearch()" th:text="#{bnt.qry}">查询</a>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'complaintNo',width:'12%'" th:text="#{complaintNo}">客诉单号</th>
+				<th data-options="field:'custComplaintNo',width:'18%'" th:text="#{custComplaintNo}">客户投诉号</th>
+				<th data-options="field:'curInitialType',width:'15%'" th:text="#{initial.type}">初审意见类型</th>
+				<th data-options="field:'solutionType',width:'13%'" th:text="#{solution.type}">解决方案类型</th>
+				<th data-options="field:'feedbackCsTime',width:'15%'" th:text="#{feedback.cs.time}">反馈客服时间</th>
+				<th data-options="field:'confirmCloseTime',width:'15%'" th:text="#{confirm.closetime}">确认闭环时间</th>
+				<th data-options="field:'orderNo',width:'10%'" th:text="#{orderNo}">订单号</th>
+				<th data-options="field:'movement',width:'10%'" th:text="#{chassis}">机芯</th>
+				<th data-options="field:'ourModel',width:'13%'" th:text="#{ourModel}">我司型号</th>
+				<th data-options="field:'custModel',width:'15%'" th:text="#{custModel}">买家型号</th>
+				<th data-options="field:'createTime',width:'15%'" th:text="#{createTime}">创建时间</th>
+			</tr>
+		</thead>
+	</table>
+
+
+	<!-- 查询条件 -->
+	<div id="qryFrmDiv" class="easyui-dialog dlgForm2" data-options="height:350,closed:true">
+		<form method="post">
+			<table class="qryTable">
+				<tr>
+					<td th:text="#{complaintNo}">客诉单号</td>
+					<td>
+						<input class="easyui-textbox" name="complaintNo">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{custComplaintNo}">客户投诉号</td>
+					<td>
+						<input class="easyui-textbox" name="custComplaintNo">
+					</td>
+					<td th:text="#{orderNo}">订单号</td>
+					<td>
+						<input class="easyui-textbox" name="orderNo">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{feedback.cs.time.start}">反馈客服时间(始)</td>
+					<td>
+						<input class="Wdate" id="feedbackCsTimeStart" name="feedbackCsTimeStart" onfocus="WdatePicker({isShowClear:true,readOnly:true,maxDate:'%y-%M-%d'})">
+					</td>
+					<td th:text="#{feedback.cs.time.end}">反馈客服时间(止)</td>
+					<td>
+						<input class="Wdate" id="feedbackCsTimeEnd" name="feedbackCsTimeEnd" onfocus="WdatePicker({isShowClear:true,readOnly:true,minDate:'#F{$dp.$D(\'feedbackCsTimeStart\')}',maxDate:'%y-%M-%d'})">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{confirm.closetime.start}">确认闭环时间(始)</td>
+					<td>
+						<input class="Wdate" id="confirmCloseTimeStart" name="confirmCloseTimeStart" onfocus="WdatePicker({isShowClear:true,readOnly:true,maxDate:'%y-%M-%d'})">
+					</td>
+					<td th:text="#{confirm.closetime.end}">确认闭环时间(止)</td>
+					<td>
+						<input class="Wdate" id="confirmCloseTimeEnd" name="confirmCloseTimeEnd" onfocus="WdatePicker({isShowClear:true,readOnly:true,minDate:'#F{$dp.$D(\'confirmCloseTimeStart\')}',maxDate:'%y-%M-%d'})">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{initial.type}">初审意见类型</td>
+					<td>
+						<input class="easyui-combobox" name="curInitialType" data-options="url:'console/sys/dict/selectDict/1111',panelHeight:'auto'">
+					</td>
+					<td th:text="#{solution.type}">解决方案类型</td>
+					<td>
+						<input class="easyui-combobox" name="solutionType" data-options="url:'console/sys/dict/selectDict/1112',panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{chassis.model}">机芯\机型</td>
+					<td>
+						<input class="easyui-textbox" name="movementModel">
+					</td>
+					<td th:text="#{chassis}">机芯</td>
+					<td>
+						<input class="easyui-textbox" name="movement">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+	<div th:replace="panel/cust/custCptView::custCpt" />
+</body>
+</html>

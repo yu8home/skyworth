@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('供应商工单')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'form/qryForPage?formMenuType=4',
+            fit : true,
+            toolbar : '.dgtoolbar',
+            onSelect : function(i, r) {
+                $("#viewBnt").linkbutton('enable');
+                // 已反馈供应商
+                if (r.vendorFormStatus == 1) {
+                    $("#feedbackCsBnt").linkbutton('enable');
+                } else {
+                    $("#feedbackCsBnt").linkbutton('disable');
+                }
+                // Accpt
+                if (r.vendorFormStatus == 2) {
+                    $("#rmaBnt").linkbutton('enable');
+                } else {
+                    $("#rmaBnt").linkbutton('disable');
+                }
+            },
+            onLoadSuccess : function(i, r) {
+                $("#feedbackCsBnt, #rmaBnt, #viewBnt").linkbutton('disable');
+            }
+        });
+
+        tdImgDdlclick('frmView');
+    });
+
+    function doSearch() {
+        $('#qryFrmDiv').qryFormDialog({
+            dg : 'dg'
+        });
+    }
+
+    function batchExcelExport() {
+        window.open('panel/vendorcpt/excelExport?formMenuType=4&' + $('#qryFrmDiv form').serialize());
+    }
+
+    // 查看
+    function view() {
+        var _complaintId = $('#dg').datagrid("getSelected").complaintId;
+        var dlg = $('#vendorCptView');
+        dlg.find("input,textarea").attr("disabled", true);
+
+        $.post('form/edit', {
+            complaintId : _complaintId
+        }, function(rs) {
+            setViewValue(dlg, rs);
+            editAfterImg('frmView');
+
+            $('#dg-suplier').datagrid({
+                url : 'panel/cscpt/qryVendorChg?complaintId=' + _complaintId
+            });
+            $('#dg-suplierConfirmLog').datagrid({
+                url : 'panel/vendorcpt/qryForList',
+                queryParams : {
+                    vendorCode : g_userCode,
+                    complaintId : _complaintId
+                }
+            });
+
+            dlg.dialog({
+                title : '[[#{panel.form.suplier}]]-[[#{view}]]',
+                maximized : true,
+                onOpen : function() {
+                    dlg.find(".easyui-tabs").tabs('select', 0);
+                }
+            }).dialog('center').dialog('open');
+        }, 'json');
+    }
+
+    // 确认
+    function confirm() {
+        var _complaintId = $('#dg').datagrid("getSelected").complaintId;
+        var dlg = $("#ww-confirm");
+        var frm = dlg.find("form");
+
+        // 赋值
+        frm.find("input[name=complaintId]").val(_complaintId);
+        frm.find("input[name=vendorCode]").val(g_userCode);
+        $.post('panel/vendorcpt/edit', {
+            complaintId : _complaintId
+        }, function(rs) {
+            frm.find("#rmaNo").textbox('setValue', rs.rmaNo);
+            frm.find("#remark").textbox('setValue', rs.remark);
+        }, 'json');
+        $.post('panel/cscpt/qryVendorChg', {
+            complaintId : _complaintId
+        }, function(rs) {
+            $("#remark2").textbox("setValue", rs[0].remark);
+        }, 'json');
+
+        dlg.dialog({
+            title : '[[#{bnt.feedback.cs}]]',
+            toolbar : [ {
+                text : bnt_save,
+                iconCls : 'icon-save',
+                handler : function() {
+                    frm.form('submit', {
+                        success : function(rs) {
+                            var json = $.parseJSON(rs);
+                            if (json.code) {
+                                tipSuccess();
+                                dlg.dialog('close');
+                                $('#dg').datagrid('reload');
+                            } else {
+                                tipFail(json.data);
+                            }
+                        }
+                    });
+                }
+            }, rebackBnt(dlg) ],
+            onClose : function() {
+                frm.form('reset');
+            }
+        }).dialog('center').dialog('open');
+    }
+
+    function rma() {
+        var _complaintId = $('#dg').datagrid("getSelected").complaintId;
+        var dlg = $("#ww-rma");
+        var frm = dlg.find("form");
+        // 赋值
+        frm.find("input[name=complaintId]").val(_complaintId);
+        $.post('panel/vendorcpt/edit', {
+            complaintId : _complaintId
+        }, function(rs) {
+            frm.find("#rmaNo").textbox('setValue', rs.rmaNo);
+        }, 'json');
+
+        dlg.dialog({
+            title : 'RMA No',
+            toolbar : [ {
+                text : bnt_save,
+                iconCls : 'icon-save',
+                handler : function() {
+                    frm.form('submit', {
+                        success : function(rs) {
+                            var json = $.parseJSON(rs);
+                            if (json.code) {
+                                tipSuccess();
+                                dlg.dialog('close');
+                            } else {
+                                tipFail(json.data);
+                            }
+                        }
+                    });
+                }
+            }, rebackBnt(dlg) ],
+            onClose : function() {
+                frm.form('reset');
+            }
+        }).dialog('center').dialog('open');
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<shiro:hasPermission name="vendorcpt:add">
+			<a id="feedbackCsBnt" class="easyui-linkbutton" data-options="iconCls:'icon-confirm'" onclick="confirm()" th:text="#{bnt.feedback.cs}">反馈客服</a>
+			<a id="rmaBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="rma()">RMA No</a>
+		</shiro:hasPermission>
+		<a id="viewBnt" class="easyui-linkbutton" data-options="iconCls:'icon-view'" onclick="view()" th:text="#{bnt.view}">查看</a>
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-search'" onclick="doSearch()" th:text="#{bnt.qry}">查询</a>
+		<a class="easyui-linkbutton easyui-tooltip" data-options="iconCls:'icon-excel'" title="按“查询条件”批量导出" onclick="batchExcelExport()" th:text="#{bnt.batchExport}">批量导出</a>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'complaintNo',width:'12%'" th:text="#{complaintNo}">客诉单号</th>
+				<th data-options="field:'vendorFormStatusName',width:'20%'" th:text="#{vendor.form.status}">供应商工单状态</th>
+				<th data-options="field:'feedbackCsTime',width:'15%'" th:text="#{feedback.cs.time}">反馈客服时间</th>
+				<th data-options="field:'feedbackSupplierTime',width:'18%'" th:text="#{feedback.supplier.time}">反馈供应商时间</th>
+				<th data-options="field:'soldToCountry',width:'13%'" th:text="#{sold.country}">销往国家</th>
+				<th data-options="field:'badPhase',width:'7%'" th:text="#{bad.phase}">不良阶段</th>
+				<th data-options="field:'failureRemark',width:'30%'" th:text="#{phenomenon.desc}">故障现象描述</th>
+			</tr>
+		</thead>
+	</table>
+
+
+	<!-- 查询条件 -->
+	<div id="qryFrmDiv" class="easyui-dialog dlgForm2" data-options="height:330,closed:true">
+		<form>
+			<table class="qryTable">
+				<tr>
+					<td th:text="#{complaintNo}">客诉单号</td>
+					<td>
+						<input class="easyui-textbox" name="complaintNo">
+					</td>
+					<td th:text="#{vendor.form.status}">供应商工单状态</td>
+					<td>
+						<input class="easyui-combobox" name="vendorFormStatus" data-options="url:'console/sys/dict/selectDict/1113',panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{feedback.supplier.time.start}">反馈供应商时间(始)</td>
+					<td>
+						<input class="Wdate" id="feedbackSupplierTimeStart" name="feedbackSupplierTimeStart" onfocus="WdatePicker({isShowClear:true,readOnly:true,maxDate:'%y-%M-%d'})">
+					</td>
+					<td th:text="#{feedback.supplier.time.end}">反馈供应商时间(止)</td>
+					<td>
+						<input class="Wdate" id="feedbackSupplierTimeEnd" name="feedbackSupplierTimeEnd" onfocus="WdatePicker({isShowClear:true,readOnly:true,minDate:'#F{$dp.$D(\'feedbackSupplierTimeStart\')}',maxDate:'%y-%M-%d'})">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{bad.phase}">不良阶段</td>
+					<td>
+						<input class="easyui-combobox" name="badPhase" data-options="url:'console/sys/dict/selectDict/1001',panelHeight:'auto'">
+					</td>
+					<td th:text="#{sold.country}">销往国家</td>
+					<td>
+						<input class="easyui-textbox" name="soldToCountry">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{panel.module.model}">屏体模组型号</td>
+					<td>
+						<input class="easyui-textbox" name="panelModuleModel">
+					</td>
+					<td th:text="#{panel.module.sn}">屏体模组序列号</td>
+					<td>
+						<input class="easyui-textbox" name="panelModuleSn">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{oc.model}">玻璃型号</td>
+					<td>
+						<input class="easyui-textbox" name="ocModel">
+					</td>
+					<td th:text="#{oc.pcbi.sn}">玻璃序列号</td>
+					<td>
+						<input class="easyui-textbox" name="ocSn">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+
+	<div id="ww-confirm" class="easyui-dialog dlgForm1" data-options="height:350,closed:true">
+		<form method="post" action="panel/vendorcpt/add">
+			<input type="hidden" name="complaintId">
+			<input type="hidden" name="vendorCode">
+			<table>
+				<tr>
+					<td th:text="#{suplier.confirm.result}">供应商确认结果</td>
+					<td>
+						<input class="easyui-combobox" id="confirmRs" name="confirmRs" data-options="url:'console/sys/dict/selDictEx/1113/1',required:true,panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td>RMA No.</td>
+					<td>
+						<input class="easyui-textbox" id="rmaNo" name="rmaNo">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{remark}">备注</td>
+					<td>
+						<input class="easyui-textbox" style="height: 60px" id="remark" name="remark" data-options="multiline:true,required:true">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{csToSuplier.remark}">客服反馈信息</td>
+					<td>
+						<input class="easyui-textbox" style="height: 60px" id="remark2" data-options="multiline:true,disabled:true">
+					</td>
+				</tr>
+			</table>
+		</form>
+		<script type="text/javascript">
+            $("#ww-confirm #confirmRs").combobox({
+                onChange : function(n, o) {
+                    var dlg = $("#ww-confirm");
+                    var rmaNo = dlg.find("#rmaNo");
+                    var remark = dlg.find("#remark");
+
+                    rmaNo.textbox("setValue", "");
+                    remark.textbox("setValue", "");
+                    if (n == 2) {
+                        rmaNo.textbox("enable");
+                    } else {
+                        rmaNo.textbox("disable");
+                    }
+                }
+            });
+        </script>
+	</div>
+	<div id="ww-rma" class="easyui-dialog dlgForm1" data-options="height:200,closed:true">
+		<form method="post" action="panel/vendorcpt/update">
+			<input type="hidden" name="complaintId">
+			<table>
+				<tr>
+					<td>RMA No.</td>
+					<td>
+						<input class="easyui-textbox" id="rmaNo" name="rmaNo">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+	<div th:replace="panel/vendor/vendorCptView::vendorCpt" />
+</body>
+</html>

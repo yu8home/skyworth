@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.console.sys.role.dao.RoleMapper">
+
+	<sql id="Base_Column_List">
+		<![CDATA[
+            select t.role_id,
+                   t.role_code,
+                   t.name,
+                   t.role_type,
+                   get_dict_name(9002, t.role_type) as role_type_name,
+                   t.is_valid,
+                   (select group_concat(f.auth_id) from s_role_authority f where f.role_id = t.role_id) as auth_ids
+              from s_role t
+        ]]>
+	</sql>
+
+	<select id="qryForList" resultType="role">
+		<include refid="Base_Column_List" />
+		<where>
+			<if test="name != null and name != ''">
+				and t.name like concat('%', #{name}, '%')
+			</if>
+		</where>
+		order by t.role_id
+	</select>
+
+	<select id="getInfo" resultType="role">
+		<include refid="Base_Column_List" />
+		where t.role_id = #{roleId}
+	</select>
+
+	<insert id="insert" keyProperty="roleId" useGeneratedKeys="true">
+		insert into s_role (role_code, name, role_type, is_valid) values (#{roleCode}, #{name}, #{roleType}, #{isValid});
+	</insert>
+	<insert id="insertRoleAuth">
+		insert into s_role_authority (role_id, auth_id) values
+		<foreach item="e" collection='authIds.split(",")' separator=",">
+			(#{roleId}, #{e})
+		</foreach>
+	</insert>
+
+	<update id="update">
+		update s_role set role_code = #{roleCode}, name = #{name}, role_type = #{roleType}, is_valid = #{isValid} where role_id = #{roleId};
+		delete from s_role_authority where role_id = #{roleId};
+
+		insert into s_role_authority (role_id, auth_id) values
+		<foreach item="e" collection='authIds.split(",")' separator=",">
+			(#{roleId}, #{e})
+		</foreach>
+	</update>
+
+</mapper>

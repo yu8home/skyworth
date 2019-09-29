@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:include="x::head('菜单管理')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').treegrid({
+            url : 'console/sys/menu/qryMenuTreeGrid',
+            idField : 'menuId',
+            treeField : 'text',
+            pagination : false,
+            fit : true,
+            toolbar : '.dgtoolbar'
+        });
+    });
+
+    function add() {
+        var std = $('#dg').treegrid("getSelected");
+        if (!std) {
+            tipSelOne();
+            return;
+        } else if (std.isLeaf == 1) {
+            $.messager.show({
+                msg : '叶子节点不能增加子菜单！'
+            });
+            return;
+        }
+        $('input[name=pid]').val(std.menuId);
+        $('#ww').editFormDialog({
+            title : '菜单管理-新建',
+            dg : 'dg',
+            istreegrid : true,
+            bnts : [ {
+                url : 'console/sys/menu/add'
+            } ]
+        });
+    }
+
+    function edit() {
+        var std = $('#dg').datagrid("getSelected");
+        $('#frm').form('load', std);
+        $('#ww').editFormDialog({
+            title : '菜单管理-编辑',
+            dg : 'dg',
+            istreegrid : true,
+            bnts : [ {
+                url : 'console/sys/menu/update'
+            } ]
+        });
+    }
+
+    function doSearch(v) {
+        $('#dg').treegrid({
+            queryParams : {
+                text : v
+            }
+        })
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="add()">新建子菜单</a>
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="edit()">编辑</a>
+		<div>
+			<input class="easyui-searchbox" data-options="searcher:doSearch,prompt:'菜单名称'">
+		</div>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'menuId',hidden:true" />
+				<th data-options="field:'pid',hidden:true" />
+				<th data-options="field:'iconCls',hidden:true" />
+				<th data-options="field:'text',width:'30%'">菜单名称</th>
+				<th data-options="field:'url',width:'40%'">URL</th>
+				<th data-options="field:'orderNo',width:'10%'">排序</th>
+				<th data-options="field:'isLeaf',width:'10%',formatter:yesOrNoRender">是否叶子</th>
+				<th data-options="field:'isValid',width:'10%',formatter:yesOrNoRender">是否有效</th>
+			</tr>
+		</thead>
+	</table>
+
+	<div id="ww" class="easyui-dialog dlgForm1" data-options="height:320,closed:true">
+		<form id="frm" method="post">
+			<input type="hidden" name="iconCls">
+			<input type="hidden" name="menuId">
+			<input type="hidden" name="pid">
+			<table>
+				<tr>
+					<td>菜单名称</td>
+					<td>
+						<input class="easyui-textbox" name="text" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>URL</td>
+					<td>
+						<input class="easyui-textbox" name="url">
+					</td>
+				</tr>
+				<tr>
+					<td>排序</td>
+					<td>
+						<input class="easyui-numberspinner" name="orderNo" data-options="required:true,min:1,max:99">
+					</td>
+				</tr>
+				<tr>
+					<td>是否叶子</td>
+					<td>
+						<input class="easyui-combobox" name="isLeaf" value="1" data-options="url:'console/sys/dict/selDict/9000',panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td>是否有效</td>
+					<td>
+						<input class="easyui-combobox" name="isValid" value="1" data-options="url:'console/sys/dict/selDict/9000',panelHeight:'auto'">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</body>
+</html>

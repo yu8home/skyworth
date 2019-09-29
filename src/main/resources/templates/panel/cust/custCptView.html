@@ -1,0 +1,289 @@
+<div th:fragment="custCpt" id="custCptView" class="easyui-dialog" data-options="closed:true">
+	<div class="easyui-tabs" data-options="fit:true">
+		<div th:title="#{tab.baseInfo}">
+			<form id="frmView">
+				<input type="hidden" name="complaintId">
+				<input type="hidden" name="status">
+				<input type="hidden" name="orderId">
+				<table class="maxDlgForm">
+					<tr>
+						<td th:text="#{complaintNo}">客诉单号</td>
+						<td>
+							<input class="easyui-textbox" name="complaintNo">
+						</td>
+						<td th:text="#{custComplaintNo}">客户投诉号</td>
+						<td>
+							<input class="easyui-textbox" name="custComplaintNo">
+						</td>
+						<td th:text="#{feedback.cs.time}">反馈客服时间</td>
+						<td>
+							<input class="easyui-textbox" name="feedbackCsTime">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{orderNo}">订单号</td>
+						<td>
+							<input class="easyui-textbox" id="orderNo" name="orderNo">
+						</td>
+						<td th:text="#{cust.orderNo}">客户订单号</td>
+						<td>
+							<input class="easyui-textbox" name="custOrderNo">
+						</td>
+						<td th:text="#{chassis}">机芯</td>
+						<td>
+							<input class="easyui-textbox" name="movement">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{ourModel}">我司型号</td>
+						<td>
+							<input class="easyui-textbox" name="ourModel">
+						</td>
+						<td th:text="#{custModel}">买家型号</td>
+						<td>
+							<input class="easyui-textbox" name="custModel">
+						</td>
+						<td th:text="#{sold.country}">销往国家</td>
+						<td>
+							<input class="easyui-textbox" name="soldToCountry">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{cbu.sn}">整机序列号</td>
+						<td>
+							<input class="easyui-textbox" name="cbuSn">
+						</td>
+						<td th:text="#{bad.phase}">不良阶段</td>
+						<td>
+							<input class="easyui-textbox" name="badPhase">
+						</td>
+						<td th:text="#{status}">状态</td>
+						<td>
+							<input class="easyui-textbox" name="statusName">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{part.name}">部件名称</td>
+						<td>
+							<input class="easyui-textbox" name="partName">
+						</td>
+						<td th:text="#{phenomenon.type}">故障现象类型</td>
+						<td colspan="3">
+							<input class="easyui-textbox" style="width: 83%" name="failureType">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{panel.module.model}">屏体模组型号</td>
+						<td>
+							<input class="easyui-textbox" name="panelModuleModel">
+						</td>
+						<td th:text="#{panel.module.sn}">屏体模组序列号</td>
+						<td colspan="3">
+							<input class="easyui-textbox" style="width: 83%" name="panelModuleSn">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{oc.model}">玻璃型号</td>
+						<td>
+							<input class="easyui-textbox" name="ocModel">
+						</td>
+						<td th:text="#{oc.pcbi.sn}">玻璃序列号</td>
+						<td colspan="3">
+							<input class="easyui-textbox" style="width: 83%" name="ocSn">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{phenomenon.desc}">故障现象描述</td>
+						<td colspan="5">
+							<input class="easyui-textbox" style="width: 90%" name="failureRemark">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{mura.test.result}">对调试验/MURA测试结果</td>
+						<td colspan="5">
+							<input class="easyui-textbox" style="width: 90%" name="exchangeTestRs">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{other.checking.result}">其它试验方法/结果</td>
+						<td colspan="5">
+							<input class="easyui-textbox" style="width: 90%" name="otherCheckRs">
+						</td>
+					</tr>
+				</table>
+				<table th:replace="x::tabImg" />
+			</form>
+		</div>
+
+		<div th:title="#{tab.Initial}">
+			<table class="tabsTable">
+				<tr>
+					<td th:text="#{initial.type}">初审意见类型</td>
+					<td>
+						<input class="easyui-textbox" name="curInitialType">
+					</td>
+					<td />
+					<td />
+					<td />
+					<td />
+				</tr>
+				<tr>
+					<td th:text="#{remark}">备注</td>
+					<td colspan="3">
+						<input class="easyui-textbox" style="width: 80%; height: 60px;" name="initialRemark" data-options="multiline:true">
+					</td>
+				</tr>
+			</table>
+		</div>
+
+
+		<!-- 解决方案 -->
+		<div id="tab-solution" th:title="#{tab.solution}">
+			<input type="hidden" name="reimAppScanFile">
+			<table class="tabsTable">
+				<tr>
+					<td th:text="#{solution.type}">解决方案类型</td>
+					<td>
+						<input class="easyui-textbox" name="solutionType">
+					</td>
+					<td />
+					<td />
+					<td />
+					<td />
+				</tr>
+				<tr class="Replacement">
+					<td th:text="#{spfNo}">备损订单号</td>
+					<td>
+						<input class="easyui-textbox" name="spfNo">
+					</td>
+					<td th:text="#{spfDelivered.type}">备损出货方式</td>
+					<td>
+						<input class="easyui-textbox" name="spfDeliveredType">
+					</td>
+				</tr>
+				<tr class="Replacement">
+					<td th:text="#{esShipmentDate}">预计出货日期</td>
+					<td>
+						<input class="easyui-textbox" name="esShipmentDate">
+					</td>
+					<td th:text="#{shipmentDate}">出货日期</td>
+					<td>
+						<input class="easyui-textbox" name="shipmentDate">
+					</td>
+				</tr>
+				<tr class="Replacement">
+					<td th:text="#{trackingNo}">追溯单号</td>
+					<td>
+						<input class="easyui-textbox" name="trackingNo">
+					</td>
+				</tr>
+				<tr class="Reimbursement">
+					<td th:text="#{reim.amount}">赔偿费用($)</td>
+					<td>
+						<input class="easyui-textbox" name="reimAmount">
+					</td>
+					<td th:text="#{reimApp.confirm.date}">赔偿申请确认日期</td>
+					<td>
+						<input class="easyui-textbox" name="reimAppConfirmTime">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{solution.desc}">解决方案描述</td>
+					<td colspan="3">
+						<input class="easyui-textbox" style="width: 80%; height: 60px;" name="solutionDesc" data-options="multiline:true">
+					</td>
+				</tr>
+			</table>
+		</div>
+
+
+		<div th:replace="x::formlog" />
+
+		<div th:title="#{tab.critical.time}">
+			<table class="tabsTable">
+				<tr>
+					<td th:text="#{createTime}">创建时间</td>
+					<td>
+						<input class="easyui-textbox" name="createTime">
+					</td>
+					<td th:text="#{creater}">创建人</td>
+					<td colspan="3">
+						<input class="easyui-textbox" style="width: 80%" name="createUserName">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{modTime}">修改时间</td>
+					<td>
+						<input class="easyui-textbox" name="modTime">
+					</td>
+					<td th:text="#{modifier}">修改人</td>
+					<td colspan="3">
+						<input class="easyui-textbox" style="width: 80%" name="modUserName">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{feedback.cs.time}">反馈客服时间</td>
+					<td>
+						<input class="easyui-textbox" name="feedbackCsTime">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{feedback.cs.time2}">再次反馈客服时间</td>
+					<td>
+						<input class="easyui-textbox" name="feedbackCsTime2">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{initial.time.first}">首次初审意见时间</td>
+					<td>
+						<input class="easyui-textbox" name="firstInitialTime">
+					</td>
+					<td th:text="#{initial.type.first}">首次初审意见类型</td>
+					<td colspan="3">
+						<input class="easyui-textbox" style="width: 80%" name="firstInitialType">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{initial.time.cur}">当前初审意见时间</td>
+					<td>
+						<input class="easyui-textbox" name="curInitialTime">
+					</td>
+					<td th:text="#{initial.type.cur}">当前初审意见类型</td>
+					<td colspan="3">
+						<input class="easyui-textbox" style="width: 80%" name="curInitialType">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{first.solution.time}">首次确认方案时间</td>
+					<td>
+						<input class="easyui-textbox" name="firstSolutionTime">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{final.solution.time}">最终确认方案时间</td>
+					<td>
+						<input class="easyui-textbox" name="finalSolutionTime">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{close.time}">闭环时间</td>
+					<td>
+						<input class="easyui-textbox" name="closeTime">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{confirm.closetime}">确认闭环时间</td>
+					<td>
+						<input class="easyui-textbox" name="confirmCloseTime">
+					</td>
+					<td />
+					<td />
+					<td />
+					<td />
+				</tr>
+			</table>
+		</div>
+	</div>
+
+	<div id="imgDialog" />
+</div>

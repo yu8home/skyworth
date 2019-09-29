@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('资源')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'console/sys/resource/qryForPage',
+            fit : true,
+            toolbar : '.dgtoolbar',
+            onSelect : function(i, r) {
+                $("#editBnt").linkbutton('enable');
+            },
+            onLoadSuccess : function(i, r) {
+                $("#editBnt").linkbutton('disable');
+            }
+        });
+    });
+
+    function add() {
+        $('#ww').editFormDialog({
+            title : '资源-新建',
+            dg : 'dg',
+            bnts : [ {
+                url : 'console/sys/resource/add'
+            } ]
+        });
+    }
+
+    function edit() {
+        var std = $('#dg').datagrid("getSelected");
+        $('#frm').form('load', std);
+        $('#ww').editFormDialog({
+            title : '资源-编辑',
+            dg : 'dg',
+            bnts : [ {
+                url : 'console/sys/resource/update'
+            } ]
+        });
+    }
+
+    function reloadResource() {
+        $.post('console/sys/resource/reloadResource', function() {
+            tipSuccess();
+        });
+    }
+
+    function doSearch(v) {
+        $('#dg').datagrid({
+            queryParams : {
+                url : v
+            }
+        });
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="add()">新建</a>
+		<a id="editBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="edit()">编辑</a>
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-reload'" onclick="reloadResource()">重载</a>
+		<div>
+			<input class="easyui-searchbox" data-options="searcher:doSearch,prompt:'URL'">
+		</div>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'resourceId',hidden:true" />
+				<th data-options="field:'url',width:'50%'">URL</th>
+				<th data-options="field:'auth',width:'30%'">特殊权限</th>
+				<th data-options="field:'isValid',width:'20%',formatter:yesOrNoRender">是否有效</th>
+			</tr>
+		</thead>
+	</table>
+
+	<div id="ww" class="easyui-dialog dlgForm1" data-options="height:280,closed:true">
+		<form id="frm" method="post">
+			<input type="hidden" name="resourceId">
+			<table>
+				<tr>
+					<td>URL</td>
+					<td>
+						<input class="easyui-textbox" name="url" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>特殊权限</td>
+					<td>
+						<input class="easyui-textbox" name="auth">
+					</td>
+				</tr>
+				<tr>
+					<td>是否有效</td>
+					<td>
+						<input class="easyui-combobox" name="isValid" value="1" data-options="url:'console/sys/dict/selDict/9000',panelHeight:'auto'">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</body>
+</html>

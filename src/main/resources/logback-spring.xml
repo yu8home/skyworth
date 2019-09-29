@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<property name="PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %C - %m%n" />
+	<property name="LOG_NAME" value="skyworth" />
+	<property name="TEST_PATH" value="I:/logs" />
+	<property name="PROD_PATH" value="/root/skyworthCpt/logs" />
+
+	<logger name="org.springframework.web" level="error" />
+
+	<!-- 开发 -->
+	<springProfile name="dev">
+		<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+			<encoder>
+				<pattern>${PATTERN}</pattern>
+			</encoder>
+		</appender>
+		<root level="debug">
+			<appender-ref ref="stdout" />
+		</root>
+	</springProfile>
+
+
+	<!-- 测试 -->
+	<springProfile name="test">
+		<appender name="test_appender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+			<encoder>
+				<pattern>${PATTERN}</pattern>
+			</encoder>
+			<file>${TEST_PATH}/${LOG_NAME}.log
+			</file>
+			<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+				<fileNamePattern>${TEST_PATH}/%d{yyyy-MM-dd}-%i.log</fileNamePattern>
+				<MaxHistory>60</MaxHistory>
+				<maxFileSize>100MB</maxFileSize>
+			</rollingPolicy>
+		</appender>
+		<root level="debug">
+			<appender-ref ref="test_appender" />
+		</root>
+	</springProfile>
+
+
+	<!-- 生产 -->
+	<springProfile name="prod">
+		<appender name="prod_appender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+			<encoder>
+				<pattern>${PATTERN}</pattern>
+			</encoder>
+			<file>${PROD_PATH}/${LOG_NAME}.log
+			</file>
+			<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+				<fileNamePattern>${PROD_PATH}/%d{yyyy-MM-dd}-%i.log</fileNamePattern>
+				<MaxHistory>60</MaxHistory>
+				<maxFileSize>100MB</maxFileSize>
+			</rollingPolicy>
+		</appender>
+		<root level="error">
+			<appender-ref ref="prod_appender" />
+		</root>
+	</springProfile>
+</configuration>

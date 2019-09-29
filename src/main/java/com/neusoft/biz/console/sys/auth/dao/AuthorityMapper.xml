@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.console.sys.auth.dao.AuthorityMapper">
+
+    <sql id="Base_Column_List">
+		<![CDATA[
+
+                    select t.auth_id,
+                           t.auth_name,
+                           t.menu_id,
+                           t.order_no,
+                           t.is_valid,
+                           (select group_concat(f.role_type) from s_authority_roletype f where f.auth_id = t.auth_id) as role_types,
+                           (select group_concat(get_dict_name(9002, f.role_type)) from s_authority_roletype f where f.auth_id = t.auth_id) as role_types_name
+                      from s_authority t
+
+        ]]>
+	</sql>
+
+    <select id="qryForList" resultType="authority">
+        <include refid="Base_Column_List"/>
+        <where>
+            <if test="menuId != null">
+                and t.menu_id = #{menuId}
+            </if>
+        </where>
+        order by t.order_no
+    </select>
+
+    <select id="getInfo" resultType="authority">
+        <include refid="Base_Column_List"/>
+        where t.auth_id = #{authId}
+    </select>
+
+    <insert id="insert" keyProperty="authId" useGeneratedKeys="true">
+		<![CDATA[
+
+                    insert into s_authority
+                      (auth_id, auth_name, menu_id, order_no, is_valid)
+                    values
+                      (#{authId}, #{authName}, #{menuId}, #{orderNo}, #{isValid});
+
+        ]]>
+	</insert>
+    <insert id="insertAuthRoleType">
+        insert into s_authority_roletype (auth_id, role_type) values
+        <foreach item="e" collection='roleTypes.split(",")' separator=",">
+            (#{authId}, #{e})
+        </foreach>
+    </insert>
+
+    <update id="update">
+        <![CDATA[
+			update s_authority
+			   set auth_name = #{authName},
+			       order_no  = #{orderNo},
+			       is_valid  = #{isValid}
+			 where auth_id = #{authId};
+		]]>
+        delete from s_authority_roletype where auth_id = #{authId};
+
+        insert into s_authority_roletype (auth_id, role_type) values
+        <foreach item="e" collection='roleTypes.split(",")' separator=",">
+            (#{authId}, #{e})
+        </foreach>
+    </update>
+
+    <delete id="delete">
+		delete from s_authority where auth_id = #{authId};
+		delete from s_authority_resource where auth_id = #{authId};
+		delete from s_authority_roletype where auth_id = #{authId};
+	</delete>
+
+    <!-- 已授权资源 -->
+    <select id="qryAuthRec" resultType="map">
+		<![CDATA[
+            select t.resource_id as resourceId, t.url
+              from s_resource t, s_authority_resource f
+             where t.resource_id = f.resource_id
+               and t.is_valid = 1
+               and f.auth_id = #{authId}
+             order by t.url
+        ]]>
+	</select>
+
+    <!-- 未授权资源 -->
+    <select id="qryUnAuthRec" resultType="resource">
+        <![CDATA[
+			select t.resource_id, t.url
+			  from s_resource t
+			 where t.is_valid = 1
+			   and (t.auth is null or t.auth = '')
+			   and not exists (select 1
+			          from s_authority_resource f
+			         where f.resource_id = t.resource_id
+			           and f.auth_id = #{authId})
+		]]>
+        <if test="url != null">
+            and t.url like concat('%', #{url}, '%')
+        </if>
+        order by t.url
+    </select>
+
+    <!-- 新建：授权资源 -->
+    <insert id="addAuthRec">
+        insert into s_authority_resource (auth_id, resource_id) values
+        <foreach item="e" collection='resourceIds.split(",")' separator=",">
+            (#{authId}, #{e})
+        </foreach>
+    </insert>
+
+    <!-- 删除：授权资源 -->
+    <delete id="deleteAuthRec">
+        delete from s_authority_resource where auth_id = #{authId} and resource_id in
+        <foreach item="e" collection='resourceIds.split(",")' open="(" separator="," close=")">
+            #{e}
+        </foreach>
+    </delete>
+
+</mapper>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.panel.vendorcpt.dao.VendorConfirmLogMapper">
+
+    <select id="qryForList" resultType="vendorConfirmLog">
+        <![CDATA[
+			select (select concat(f.vendor_name, '(', f.vendor_code, ')') from b_vendor f where f.vendor_code = t.vendor_code) as vendor_code,
+			       (select f.text from s_data_dict f where f.dict_code = 1113 and f.value = t.confirm_rs) as confirm_rs,
+			       t.rma_no,
+			       t.remark,
+			       date_format(t.create_time, '%Y-%m-%d %H:%i') as create_time
+			  from d_panel_cpt_vendor_log t
+			 where t.complaint_id = #{complaintId}
+		]]>
+        <!-- 客服查询所有 -->
+        <if test="vendorCode != null and vendorCode != ''">and t.vendor_code = #{vendorCode}</if>
+        order by t.create_time desc
+    </select>
+
+    <select id="getInfo" resultType="vendorConfirmLog">
+		<![CDATA[
+            select y.rma_no, y.remark
+              from d_panel_cpt_vendor_log y
+             where y.vendor_log_id =
+                   (select substring_index(group_concat(x.vendor_log_id order by x.create_time desc), ',', 1)
+                      from d_panel_cpt_vendor_log x
+                     where x.complaint_id = #{complaintId})
+        ]]>
+	</select>
+
+    <insert id="insert">
+		update d_panel_cpt set vendor_form_status = #{confirmRs} where complaint_id = #{complaintId};
+		<![CDATA[
+			insert into d_panel_cpt_vendor_log
+			  (complaint_id, vendor_code, confirm_rs, rma_no, remark, create_time)
+			values
+			  (#{complaintId}, #{vendorCode}, #{confirmRs}, #{rmaNo}, #{remark}, now())
+
+        ]]>
+    </insert>
+
+    <update id="update">
+		<![CDATA[
+            update d_panel_cpt_vendor_log t
+               set t.rma_no = #{rmaNo}
+             where t.vendor_log_id =
+                   (select x.logid
+                      from (select substring_index(group_concat(f.vendor_log_id order by f.create_time desc), ',', 1) as logid
+                              from d_panel_cpt_vendor_log f
+                             where f.complaint_id = #{complaintId}) x)
+        ]]>
+	</update>
+
+</mapper>

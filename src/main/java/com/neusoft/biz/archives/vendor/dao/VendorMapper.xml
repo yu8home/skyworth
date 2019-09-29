@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.archives.vendor.dao.VendorMapper">
+
+    <sql id="Base_Column_List">
+		<![CDATA[
+            select t.vendor_code,
+                   t.vendor_name,
+                   t.brand,
+                   t.link_man,
+                   t.link_email,
+                   t.is_valid
+              from b_vendor t
+        ]]>
+	</sql>
+
+    <select id="qryForList" resultType="vendor">
+        <include refid="Base_Column_List"/>
+        <where>
+            <if test="vendorName != null and vendorName != ''">
+                and t.vendor_code like concat('%', #{vendorName}, '%') or t.vendor_name like concat('%', #{vendorName}, '%')
+            </if>
+            <if test="isValid != null and isValid != ''">
+                and t.is_valid = #{isValid}
+            </if>
+        </where>
+        order by t.vendor_code desc
+    </select>
+
+    <select id="getInfo" resultType="vendor">
+        <include refid="Base_Column_List"/>
+        where t.vendor_code = #{vendorCode}
+    </select>
+
+    <insert id="insert">
+		<![CDATA[
+            insert into b_vendor
+              (vendor_code, vendor_name, brand, link_man, link_email, is_valid)
+            values
+              (#{vendorCode},
+               #{vendorName},
+               #{brand},
+               #{linkMan},
+               #{linkEmail},
+               #{isValid})
+        ]]>
+	</insert>
+
+    <update id="update">
+		<![CDATA[
+            update b_vendor
+               set vendor_name = #{vendorName},
+                   brand       = #{brand},
+                   link_man    = #{linkMan},
+                   link_email  = #{linkEmail},
+                   is_valid    = #{isValid}
+             where vendor_code = #{vendorCode};
+
+             update s_user t set t.name = #{vendorName}, t.is_valid = #{isValid} where t.user_code = #{vendorCode};
+        ]]>
+	</update>
+
+</mapper>

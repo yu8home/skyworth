@@ -1,0 +1,221 @@
+<head th:fragment="head(title)">
+<base th:href="${basePath}">
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title th:text="${title}" />
+<link rel="shortcut icon" type="image/x-icon" th:href="@{/static/favicon.ico}">
+<link rel="stylesheet" type="text/css" th:href="@{/static/font-awesome/css/font-awesome.css}">
+<link rel="stylesheet" type="text/css" th:href="@{/static/jquery-easyui/themes/bootstrap/easyui.css}">
+<link rel="stylesheet" type="text/css" th:href="@{/static/jquery-easyui/themes/icon.css}">
+<script type="text/javascript" th:src="@{/static/jquery-easyui/jquery.min.js}"></script>
+<script type="text/javascript" th:src="@{/static/jquery-easyui/jquery.easyui.min.js}"></script>
+<script type="text/javascript" th:src="@{/static/jquery.easyui.ext.js}"></script>
+<script type="text/javascript" th:src="@{/static/My97DatePicker/WdatePicker.js}"></script>
+<script type="text/javascript" th:src="@{/static/jquery.md5.js}"></script>
+<script type="text/javascript" th:src="${'en'.equals(language)} ? @{/static/jquery-easyui/locale/easyui-lang-en.js} : @{/static/jquery-easyui/locale/easyui-lang-zh_CN.js}"></script>
+<script type="text/javascript">
+    var g_userId = "[[${user.userId}]]";
+    var g_userCode = "[[${user.userCode}]]";
+    var g_userName = "[[${user.name}]]";
+    var g_roleType = "[[${user.roleType}]]";
+    var g_roleTypeName = "[[${user.roleTypeName}]]";
+
+    // 工单状态
+    var g_status_new = 1; // 新建
+    var g_status_audit = 2; // 提交审核
+    var g_status_info_rejected = 3; // 信息驳回
+    var g_status_initial_confirming = 4; // 待客户确认初审意见
+    var g_status_initial_rejected = 5; // 客户驳回初审意见
+    var g_status_solution_being_provided = 6; // 待客服提供解决方案
+    var g_status_solution_confirming = 7; // 待客户确认解决方案
+    var g_status_solution_rejected = 8; // 客户驳回解决方案
+    var g_status_will_to_be_closed = 9; // 待闭环
+    var g_status_to_be_closed = 10; // 闭环
+    var g_status_closed = 11; // 结束
+
+    // 国际化
+    var g_yes = "[[#{yes}]]";// 是
+    var g_no = "[[#{no}]]";// 否
+    var g_tip_success = "[[#{tip.success}]]";// "操作成功";
+    var g_tip_selOnlyOne = "[[#{tip.selOnlyOne}]]";// "请选择一条记录！";
+    var g_tip_selRecord = "[[#{tip.selRecord}]]";// "请选择记录！";
+    var g_tip_title = "[[#{tip.title}]]";// "提示";
+    var g_xls_tip = "[[#{xls.tip}]]";// "请选择以“.xlsx”结尾的excel文件";
+    var bnt_new = "[[#{bnt.new}]]"; // 新建
+    var bnt_edit = "[[#{bnt.edit}]]"; // 编辑
+    var bnt_del = "[[#{bnt.del}]]"; // 删除
+    var bnt_view = "[[#{bnt.view}]]"; // 查看
+    var bnt_qry = "[[#{bnt.qry}]]"; // 查询
+    var bnt_reset = "[[#{bnt.reset}]]"; // 重置
+    var bnt_select = "[[#{bnt.select}]]"; // 选择
+    var bnt_save = "[[#{bnt.save}]]"; // 保存
+    var bnt_reback = "[[#{bnt.reback}]]"; // 返回
+    var bnt_tmplate_download = "[[#{bnt.tmplate.download}]]"; // 模板下载
+    var bnt_import = "[[#{bnt.import}]]"; // 导入
+    var bnt_fileUpload = "[[#{bnt.fileUpload}]]"; // 附件上传
+    var browse = "[[#{browse}]]"; // 浏览
+    var pictureViewer = "[[#{picture.viewer}]]"; // 图片查看器
+    var qry_condition = "[[#{qry.condition}]]"; // 查询条件
+    var order_select = '[[#{order}]]-[[#{select}]]'; // 订单选择
+</script>
+<link rel="stylesheet" type="text/css" th:href="@{/static/x.css(t=${sysStartupTime})}">
+<script type="text/javascript" th:src="@{/static/x.js(t=${sysStartupTime})}"></script>
+</head>
+
+
+<div th:fragment="loading" id='loading' style="position: absolute; z-index: 1000; top: 0px; left: 0px; width: 100%; height: 100%; background: white;">
+	<script type="text/javascript">
+        $.parser.onComplete = function() {
+            $("#loading").fadeOut("slow");
+        }
+    </script>
+</div>
+
+
+<!-- 订单弹出框 -->
+<div th:fragment="order" id="ww-order" class="dlglist2" data-options="closed:true">
+	<form>
+		<table class='qryTable'>
+			<tr>
+				<td th:text="#{orderNo}">订单号</td>
+				<td>
+					<input class='easyui-textbox' style="width: 150px;" name='orderNo'>
+				</td>
+				<td th:text="#{cust.orderNo}">客户订单号</td>
+				<td>
+					<input class="easyui-textbox" style="width: 150px;" name="custOrderNo">
+				</td>
+				<td th:text="#{cust.name}">客户名称</td>
+				<td>
+					<input class='easyui-textbox' style="width: 150px;" name='custName'>
+				</td>
+			</tr>
+			<tr>
+				<td th:text="#{brand}">品牌</td>
+				<td>
+					<input class='easyui-textbox' style="width: 150px;" name='brand'>
+				</td>
+				<td th:text="#{chassis}">机芯</td>
+				<td>
+					<input class='easyui-textbox' style="width: 150px;" name='movement'>
+				</td>
+				<td th:text="#{ourModel}">我司型号</td>
+				<td>
+					<input class='easyui-textbox' style="width: 150px;" name='ourModel'>
+				</td>
+			</tr>
+		</table>
+	</form>
+	<table id="dg-order">
+		<thead>
+			<tr>
+				<th data-options="field:'orderNo',width:'13%'" th:text="#{orderNo}">订单号</th>
+				<th data-options="field:'custOrderNo',width:'18%'" th:text="#{cust.orderNo}">客户订单号</th>
+				<th data-options="field:'custName',width:'32%'" th:text="#{cust.name}">客户名称</th>
+				<th data-options="field:'brand',width:'14%'" th:text="#{brand}">品牌</th>
+				<th data-options="field:'movement',width:'12%'" th:text="#{chassis}">机芯</th>
+				<th data-options="field:'ourModel',width:'12%'" th:text="#{ourModel}">我司型号</th>
+			</tr>
+		</thead>
+	</table>
+</div>
+
+
+<!-- 状态变更记录 -->
+<div th:fragment="formlog" th:title="#{tab.status.changeLog}">
+	<table id="dg-formlog" border="0" class="easyui-datagrid" data-options="pagination:false,fit:true">
+		<thead>
+			<tr>
+				<th data-options="field:'createUserName',width:'30%'" th:text="#{creater}" />
+				<th data-options="field:'createTime',width:'15%'" th:text="#{createTime}" />
+				<th data-options="field:'statusName',width:'25%'" th:text="#{status}" />
+				<th data-options="field:'remark',width:'30%'" th:text="#{remark}" />
+			</tr>
+		</thead>
+	</table>
+</div>
+
+
+<!-- 供应商反馈信息 -->
+<div th:fragment="suplierConfirmLog" th:title="#{tab.suplier.feedback}">
+	<table id="dg-suplierConfirmLog" border="0" class="easyui-datagrid" data-options="pagination:false,fit:true">
+		<thead>
+			<tr>
+				<th data-options="field:'vendorCode',width:'25%'" th:text="#{suplier}" />
+				<th data-options="field:'confirmRs',width:'15%'" th:text="#{suplier.confirm.result}" />
+				<th data-options="field:'rmaNo',width:'15%'">RMA No.</th>
+				<th data-options="field:'remark',width:'30%'" th:text="#{remark}" />
+				<th data-options="field:'createTime',width:'15%'" th:text="#{createTime}" />
+			</tr>
+		</thead>
+	</table>
+</div>
+
+
+<!-- 图片区 -->
+<table th:fragment="tabImg" class="tabImg">
+	<input type="hidden" name="cbuSnImg1">
+	<input type="hidden" name="cbuSnImg2">
+	<input type="hidden" name="cbuSnImg3">
+	<input type="hidden" name="badPhenImg1">
+	<input type="hidden" name="badPhenImg2">
+	<input type="hidden" name="badPhenImg3">
+	<input type="hidden" name="panelModuleSnImg1">
+	<input type="hidden" name="panelModuleSnImg2">
+	<input type="hidden" name="panelModuleSnImg3">
+	<input type="hidden" name="ocSnImg1">
+	<input type="hidden" name="ocSnImg2">
+	<input type="hidden" name="ocSnImg3">
+	<input type="hidden" name="screenFacPackingImg1">
+	<input type="hidden" name="screenFacPackingImg2">
+	<input type="hidden" name="screenFacPackingImg3">
+	<input type="hidden" name="outsidePackingImg1">
+	<input type="hidden" name="outsidePackingImg2">
+	<input type="hidden" name="outsidePackingImg3">
+	<input type="hidden" name="insidePackingImg1">
+	<input type="hidden" name="insidePackingImg2">
+	<input type="hidden" name="insidePackingImg3">
+	<input type="hidden" name="scrappedImg1">
+	<input type="hidden" name="scrappedImg2">
+	<input type="hidden" name="scrappedImg3">
+	<tr style="height: 35px;">
+		<td name="h_cbuSnImg" style="width: 12%;" th:text="#{cbu.sn}">整机序列号</td>
+		<td name="h_badPhenImg" style="width: 12%; color: red;" th:text="#{phenomenon.pic}">现象图片</td>
+		<td name="h_panelModuleSnImg" style="width: 13%;" th:text="#{panel.module.sn}">屏体模组序列号</td>
+		<td name="h_ocSnImg" style="width: 12%; color: red;" th:text="#{oc.pcbi.sn}">玻璃序列号</td>
+		<td name="h_screenFacPackingImg" style="width: 13%;" th:text="#{carton.label}">屏厂包装箱贴纸</td>
+		<td name="h_outsidePackingImg" style="width: 13%;" th:text="#{packingBox.outside.status}">包装箱外部状态</td>
+		<td name="h_insidePackingImg" style="width: 13%;" th:text="#{packingBox.inside.status}">包装箱内部状态</td>
+		<td name="h_scrappedImg" style="width: 12%;" th:text="#{scrap}">报废</td>
+	</tr>
+	<tr style="height: 100px;">
+		<td id="cbuSnImg1"></td>
+		<td id="badPhenImg1"></td>
+		<td id="panelModuleSnImg1"></td>
+		<td id="ocSnImg1"></td>
+		<td id="screenFacPackingImg1"></td>
+		<td id="outsidePackingImg1"></td>
+		<td id="insidePackingImg1"></td>
+		<td id="scrappedImg1"></td>
+	</tr>
+	<tr style="height: 100px;">
+		<td id="cbuSnImg2"></td>
+		<td id="badPhenImg2"></td>
+		<td id="panelModuleSnImg2"></td>
+		<td id="ocSnImg2"></td>
+		<td id="screenFacPackingImg2"></td>
+		<td id="outsidePackingImg2"></td>
+		<td id="insidePackingImg2"></td>
+		<td id="scrappedImg2"></td>
+	</tr>
+	<tr style="height: 100px;">
+		<td id="cbuSnImg3"></td>
+		<td id="badPhenImg3"></td>
+		<td id="panelModuleSnImg3"></td>
+		<td id="ocSnImg3"></td>
+		<td id="screenFacPackingImg3"></td>
+		<td id="outsidePackingImg3"></td>
+		<td id="insidePackingImg3"></td>
+		<td id="scrappedImg3"></td>
+	</tr>
+</table>

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.console.sys.user.dao.UserMapper">
+
+    <select id="qryForList" resultType="user">
+        <![CDATA[
+			select t.user_id,
+			       t.user_code,
+			       t.name,
+			       t.password,
+			       t.is_valid,
+			       t.role_type,
+			       get_dict_name(9002, t.role_type) as role_type_name,
+			       (select group_concat(k.name) from s_user_role f, s_role k where f.user_id = t.user_id and f.role_id = k.role_id and k.is_valid = 1) as role_names
+			  from s_user t
+		]]>
+        <where>
+            <if test="isValid != null">
+                and t.is_valid = #{isValid}
+            </if>
+            <if test="name != null and name != ''">
+                and (t.user_code like concat('%', #{name}, '%') or t.name like concat('%', #{name}, '%'))
+            </if>
+        </where>
+        order by t.user_code desc
+    </select>
+
+    <select id="getInfo" resultType="user">
+        <![CDATA[
+			select user_id,
+			       user_code,
+			       name,
+			       password,
+			       is_valid,
+			       role_type,
+			       role_type_name,
+			       role_names,
+			       brand,
+			       sale_name,
+			       warranty_period,
+			       link_man,
+			       link_email,
+			       country
+			  from v_user t
+		]]>
+        <where>
+            <if test="userId != null">
+                and t.user_id = #{userId}
+            </if>
+            <if test="userCode != null and userCode != ''">
+                and t.user_code = #{userCode}
+            </if>
+        </where>
+    </select>
+
+    <insert id="insert" keyProperty="userId" useGeneratedKeys="true">
+		<![CDATA[
+
+                    insert into s_user
+                      (user_code,
+                       name,
+                       password,
+                       role_type,
+                       is_valid)
+                    values
+                      (#{userCode},
+                       #{name},
+                       #{password},
+                       #{roleType},
+                       #{isValid});
+
+        ]]>
+	</insert>
+    <insert id="insertUserRole">
+		insert into s_user_role(user_id, role_id) values (#{userId}, (select f.role_id from s_role f where f.role_type = #{roleType}))
+	</insert>
+
+    <!-- 可选角色 -->
+    <select id="optionalRole" parameterType="user" resultType="map">
+        <![CDATA[
+			select t.role_id, t.name
+			  from s_role t
+			 where t.is_valid = 1
+			   and t.role_type = #{roleType}
+		]]>
+        <if test="userId != null">
+            and not exists (select 1 from s_user_role f where f.role_id = t.role_id and f.user_id = #{userId})
+        </if>
+        order by t.name
+    </select>
+
+    <!-- 已选角色 -->
+    <select id="selectedRole" parameterType="user" resultType="map">
+		<![CDATA[
+
+                    select t.role_id, t.name
+                      from s_role t
+                     where t.is_valid = 1
+                       and t.role_type = #{roleType}
+                       and exists (select 1 from s_user_role f where f.role_id = t.role_id and f.user_id = #{userId})
+                     order by t.name
+
+        ]]>
+	</select>
+
+    <!-- 校验用户编码是否已存在 -->
+    <select id="isExistsUserCode" parameterType="user" resultType="int">
+        select count(1) from s_user t where t.user_code = #{userCode}
+        <if test="userId != null">and t.user_id != #{userId}</if>
+    </select>
+
+    <update id="updatePwd" parameterType="user">
+		update s_user t set t.password = #{password} where user_id = #{userId}
+	</update>
+
+    <!-- 用户角色：超级管理员查询所有角色 -->
+    <select id="qryUserRoles" resultType="string">
+        select t.role_code from s_role t, s_user_role f where t.role_id = f.role_id
+        <if test="userId != 1">and f.user_id = #{userId}</if>
+    </select>
+
+    <!-- 用户权限 -->
+    <select id="qryUserPerms" resultType="resource">
+		<![CDATA[
+
+                    select d.url, d.auth
+                      from s_user_role          a,
+                           s_role_authority     b,
+                           s_authority_resource c,
+                           s_resource           d
+                     where a.role_id = b.role_id
+                       and b.auth_id = c.auth_id
+                       and c.resource_id = d.resource_id
+                       and d.is_valid = 1
+                       and a.user_id = #{userId}
+
+        ]]>
+	</select>
+
+    <!-- 失效用户前校验是否有未闭环工单 -->
+    <select id="getUnclosedCntByUser" resultType="int">
+        select count(1) from d_panel_cpt t where t.status != 11
+        <if test='roleType == "C"'>and exists (select 1 from v_user f where f.user_id = t.create_user_id and f.user_code = #{userCode})</if>
+        <if test='roleType == "CS"'>and exists (select 1 from v_user f, b_cs_2_cust g where f.user_id = t.create_user_id and f.user_code = g.user_code and g.cust_serv_code = #{userCode})</if>
+        <if test='roleType == "S"'>and t.vendor_code = #{userCode}</if>
+    </select>
+
+</mapper>

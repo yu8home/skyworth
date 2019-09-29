@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head th:include="x::head('用户管理')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'console/sys/user/qryForPage',
+            fit : true,
+            toolbar : '.dgtoolbar',
+            onSelect : function(i, r) {
+                $("#pwdBnt").linkbutton('enable');
+            },
+            onLoadSuccess : function(i, r) {
+                $("#pwdBnt").linkbutton('disable');
+            }
+        });
+    });
+
+    function resetPwd() {
+        var std = $('#dg').datagrid("getSelected");
+        if (!std) {
+            tipSelOne();
+            return;
+        }
+        $.messager.confirm('提示', '是否确认“密码重置”？', function(r) {
+            if (r) {
+                $.post('console/sys/user/resetPwd', {
+                    userId : std.userId,
+                    userCode : std.userCode
+                }, function() {
+                    tipSuccess();
+                });
+            }
+        });
+    }
+
+    function doSearch(v) {
+        $('#dg').datagrid({
+            queryParams : {
+                name : v
+            }
+        });
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<a id="pwdBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="resetPwd()">密码重置</a>
+		<div>
+			<input class="easyui-searchbox" data-options="searcher:doSearch,prompt:'编码、名称'">
+		</div>
+	</div>
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'userCode',width:'10%'">用户编码</th>
+				<th data-options="field:'name',width:'50%'">用户名称</th>
+				<th data-options="field:'userId',width:'10%'">用户ID</th>
+				<th data-options="field:'roleNames',width:'15%'">用户角色</th>
+				<th data-options="field:'isValid',width:'15%',formatter:yesOrNoRender">是否有效</th>
+			</tr>
+		</thead>
+	</table>
+</body>
+</html>

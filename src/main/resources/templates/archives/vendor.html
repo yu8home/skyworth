@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('供应商')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'archives/vendor/qryForPage',
+            fit : true,
+            toolbar : '.dgtoolbar',
+            onSelect : function(i, r) {
+                $("#editBnt").linkbutton('enable');
+            },
+            onLoadSuccess : function(i, r) {
+                $("#editBnt").linkbutton('disable');
+            }
+        });
+    });
+
+    function add() {
+        $('#ww').editFormDialog({
+            title : '供应商-新建',
+            dg : 'dg',
+            bnts : [ {
+                url : 'archives/vendor/add'
+            } ]
+        });
+    }
+
+    function edit() {
+        var std = $('#dg').datagrid("getSelected");
+        $('#frm').form('load', std);
+        $('#ww').editFormDialog({
+            title : '供应商-编辑',
+            dg : 'dg',
+            bnts : [ {
+                url : 'archives/vendor/update'
+            } ]
+        });
+    }
+
+    function doSearch(v) {
+        $('#dg').datagrid({
+            queryParams : {
+                vendorName : v
+            }
+        });
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<shiro:hasPermission name="vendor:add">
+			<a class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="add()">新建</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="vendor:update">
+			<a id="editBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="edit()">编辑</a>
+		</shiro:hasPermission>
+		<div>
+			<input class="easyui-searchbox" data-options="searcher:doSearch,prompt:'供应商账号、名称'">
+		</div>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'vendorCode',width:'10%'">供应商账号</th>
+				<th data-options="field:'vendorName',width:'25%'">供应商名称</th>
+				<th data-options="field:'brand',width:'15%'">品牌</th>
+				<th data-options="field:'linkMan',width:'15%'">联系人</th>
+				<th data-options="field:'linkEmail',width:'25%'">联系人邮箱</th>
+				<th data-options="field:'isValid',width:'10%',formatter:yesOrNoRender">是否有效</th>
+			</tr>
+		</thead>
+	</table>
+
+	<div id="ww" class="easyui-dialog dlgForm1" data-options="height:320,closed:true">
+		<form id="frm" method="post">
+			<input type="hidden" name="vendorCode">
+			<table>
+				<tr>
+					<td>供应商名称</td>
+					<td>
+						<input class="easyui-textbox" name="vendorName" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>品牌</td>
+					<td>
+						<input class="easyui-textbox" name="brand" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>联系人</td>
+					<td>
+						<input class="easyui-textbox" name="linkMan" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>联系人邮箱</td>
+					<td>
+						<input class="easyui-textbox" name="linkEmail" data-options="required:true,validType:'email'">
+					</td>
+				</tr>
+				<tr>
+					<td>是否有效</td>
+					<td>
+						<input class="easyui-combobox" name="isValid" value="1" data-options="url:'console/sys/dict/selDict/9000',panelHeight:'auto'">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</body>
+</html>

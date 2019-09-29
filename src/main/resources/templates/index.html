@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head(#{system.name})" />
+<script type="text/javascript">
+    $(function() {
+        $("#homePage").attr("src", "home-page");
+        $('#wt').tree({
+            url : 'console/sys/menu/qryMenuByUserId',
+            onLoadSuccess : function(node, data) {
+                $(this).tree('expandAll');
+                $(this).tree('options').animate = true;// 避免刚进入页面全部展开时的animate效果
+            },
+            onClick : function(node) {
+                if (node.isLeaf) {
+                    var tab = $('#tt').tabs('getTab', node.text);
+                    if (!!tab) {
+                        $('#tt').tabs('select', node.text);
+                    } else {
+                        $('#tt').tabs('add', {
+                            id : node.id,
+                            title : node.text,
+                            bodyCls : 'overflow-hidden',
+                            content : '<iframe src="' + node.url + '" scrolling="no" frameborder="0" style="width: 100%;height: 100%;"></iframe>',
+                            selected : true,
+                            closable : true
+                        });
+                    }
+                }
+            }
+        });
+    });
+
+    function modPwd() {
+        var dlg = $('#ww-pwd');
+        var frm = $("form", dlg);
+        dlg.dialog({
+            title : '[[#{password.modify}]]',
+            toolbar : [ {
+                text : bnt_save,
+                iconCls : 'icon-save',
+                handler : function() {
+                    frm.form('submit', {
+                        onSubmit : function() {
+                            var password = $("#password");
+                            var pwd = $("#pwd");
+                            if (!$(this).form('validate')) {
+                                return false;
+                            } else if (password.textbox("getValue") != pwd.textbox("getValue")) {
+                                password.textbox("setValue", "");
+                                pwd.textbox("setValue", "");
+                                tipFail("[[#{pwd.twice.different}]]");
+                                return false;
+                            }
+                            password.textbox("setValue", $.md5(password.textbox("getValue")));
+                            pwd.textbox("setValue", "");
+                            return true;
+                        },
+                        success : function(rs) {
+                            var json = $.parseJSON(rs);
+                            if (json.code) {
+                                tipSuccess();
+                                dlg.dialog('close');
+                            } else {
+                                tipFail(json.data);
+                            }
+                        }
+                    });
+                }
+            }, rebackBnt(dlg) ],
+            onClose : function() {
+                frm.form('reset');
+            }
+        }).dialog('center').dialog('open');
+    }
+
+    function logout() {
+        $.messager.confirm(g_tip_title, '[[#{confirm.logout}]]', function(r) {
+            if (r) {
+                top.location.replace('logout');
+            }
+        });
+    }
+</script>
+
+<body class="easyui-layout">
+	<div data-options="region:'north'" class="navbar">
+		<div th:text="#{system.name}" />
+		<ul>
+			<li>
+				<i class="fa fa-user-o"></i>[[${user.name}]]（[[${user.userCode}]]）
+			</li>
+			<li>
+				<a onclick="modPwd()">
+					<i class="fa fa-lock"></i>[[#{password.modify}]]
+				</a>
+			</li>
+			<li>
+				<a onclick="logout()">
+					<i class="fa fa-sign-out"></i>[[#{logout}]]
+				</a>
+			</li>
+		</ul>
+	</div>
+	<div data-options="region:'west',split:true" th:title="#{navigation.bar}" style="width: 200px;">
+		<ul id="wt" />
+	</div>
+	<div data-options="region:'center',border:false">
+		<div id="tt" class="easyui-tabs" data-options="fit:true">
+			<div th:title="#{home}" iconCls="fa fa-home" class="overflow-hidden">
+				<iframe id="homePage" scrolling="no" frameborder="0" style="width: 100%; height: 100%;"></iframe>
+			</div>
+		</div>
+	</div>
+
+	<div id="ww-pwd" class="easyui-dialog dlgForm1" data-options="height:230,closed:true">
+		<form method="post" action="console/sys/user/updatePwd">
+			<table>
+				<tr>
+					<td th:text="#{newPwd}" />
+					<td>
+						<input class="easyui-passwordbox" id="password" name="password" data-options="required:true,validType:'length[4,10]'">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{confirm.newPwd}" />
+					<td>
+						<input class="easyui-passwordbox" id="pwd" name="pwd" data-options="required:true,validType:'length[4,10]'">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</body>
+</html>

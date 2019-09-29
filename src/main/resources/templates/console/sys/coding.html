@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('编码规则')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'console/sys/coding/qryForPage',
+            fit : true,
+            toolbar : '.dgtoolbar',
+            onSelect : function(i, r) {
+                $("#editBnt").linkbutton('enable');
+            },
+            onLoadSuccess : function(i, r) {
+                $("#editBnt").linkbutton('disable');
+            }
+        });
+    });
+
+    function add() {
+        $('#ww').editFormDialog({
+            title : '编码规则-新建',
+            dg : 'dg',
+            bnts : [ {
+                url : 'console/sys/coding/add'
+            } ]
+        });
+    }
+
+    function edit() {
+        var std = $('#dg').datagrid("getSelected");
+        $('#frm').form('load', std);
+        $('#ww').editFormDialog({
+            title : '编码规则-编辑',
+            dg : 'dg',
+            bnts : [ {
+                url : 'console/sys/coding/update'
+            } ]
+        });
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="add()">新建</a>
+		<a id="editBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="edit()">编辑</a>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'ruleCode',width:'15%'">编码</th>
+				<th data-options="field:'prefix',width:'10%'">前缀</th>
+				<th data-options="field:'dateTypeName',width:'15%'">日期类型</th>
+				<th data-options="field:'suffixDigit',width:'15%'">后缀序列位数</th>
+				<th data-options="field:'curValue',width:'15%'">当前值</th>
+				<th data-options="field:'resetValueTypeName',width:'10%'">值重置类型</th>
+				<th data-options="field:'remark',width:'20%'">备注</th>
+			</tr>
+		</thead>
+	</table>
+
+	<div id="ww" class="easyui-dialog dlgForm1" data-options="height:380,closed:true">
+		<form id="frm" method="post">
+			<table>
+				<tr>
+					<td>编码</td>
+					<td>
+						<input class="easyui-textbox" name="ruleCode" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>前缀</td>
+					<td>
+						<input class="easyui-textbox" name="prefix" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>日期类型</td>
+					<td>
+						<input class="easyui-combobox" name="dateType" value="1" data-options="url:'console/sys/dict/selDict/9003',panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td>后缀序列位数</td>
+					<td>
+						<input class="easyui-numberspinner" name="suffixDigit" data-options="required:true,min:2,max:8">
+					</td>
+				</tr>
+				<tr>
+					<td>当前值</td>
+					<td>
+						<input class="easyui-numberspinner" name="curValue" value="1" data-options="required:true,min:1">
+					</td>
+				</tr>
+				<tr>
+					<td>值重置类型</td>
+					<td>
+						<input class="easyui-combobox" name="resetValueType" value="1" data-options="url:'console/sys/dict/selDict/9004',panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td>备注</td>
+					<td>
+						<input class="easyui-textbox" name="remark" data-options="required:true">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</body>
+</html>

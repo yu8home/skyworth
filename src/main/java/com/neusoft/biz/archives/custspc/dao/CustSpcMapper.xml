@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.archives.custspc.dao.CustSpcMapper">
+
+    <sql id="Base_Column_List">
+		select t.cust_serv_code, t.cust_serv_name, t.link_email, t.is_valid from b_cs t
+	</sql>
+
+    <select id="qryForList" resultType="custSpc">
+        <include refid="Base_Column_List"/>
+        <where>
+            <if test="custServName != null and custServName != ''">
+                t.cust_serv_code like concat('%', #{custServName}, '%') or t.cust_serv_name like concat('%', #{custServName}, '%')
+            </if>
+        </where>
+        order by t.cust_serv_code desc
+    </select>
+
+    <select id="getInfo" resultType="custSpc">
+        <include refid="Base_Column_List"/>
+        where t.cust_serv_code = #{custServCode}
+    </select>
+
+    <insert id="insert">
+		<![CDATA[
+            insert into b_cs
+              (cust_serv_code, cust_serv_name, link_email, is_valid)
+            values
+              (#{custServCode}, #{custServName}, #{linkEmail}, #{isValid})
+        ]]>
+	</insert>
+
+    <update id="update">
+		<![CDATA[
+            update b_cs
+               set cust_serv_name = #{custServName},
+                   link_email     = #{linkEmail},
+                   is_valid       = #{isValid}
+             where cust_serv_code = #{custServCode};
+
+            update s_user t set t.name = #{custServName}, t.is_valid = #{isValid} where t.user_code = #{custServCode};
+        ]]>
+	</update>
+
+    <!-- 已关联用户 -->
+    <select id="qryRelUser" resultType="user">
+		<![CDATA[
+            select t.user_code,
+                   (select f.name from s_user f where f.user_code = t.user_code) as name
+              from b_cs_2_cust t
+             where t.cust_serv_code = #{custServCode}
+             order by t.user_code desc
+        ]]>
+	</select>
+
+    <!-- 未关联用户 -->
+    <select id="qryUnRelUser" resultType="user">
+        <![CDATA[
+			select t.user_code, t.name
+			  from s_user t
+			 where t.role_type = 'C'
+			   and not exists (select 1 from b_cs_2_cust f where f.user_code = t.user_code)
+		]]>
+        <if test="codeName != null and codeName != ''">
+            and (t.user_code like concat('%', #{codeName}, '%') or t.name like concat('%', #{codeName}, '%'))
+        </if>
+        order by t.user_code desc
+    </select>
+
+    <!-- 新建：关联用户 -->
+    <insert id="addRelUser">
+        insert into b_cs_2_cust (cust_serv_code, user_code) values
+        <foreach item="e" collection='userCodes.split(",")' separator=",">
+            (#{custServCode}, #{e})
+        </foreach>
+    </insert>
+
+    <!-- 删除：关联用户 -->
+    <delete id="deleteRelUser">
+        delete from b_cs_2_cust where cust_serv_code = #{custServCode} and user_code in
+        <foreach item="e" collection='userCodes.split(",")' open="(" separator="," close=")">
+            #{e}
+        </foreach>
+    </delete>
+
+</mapper>

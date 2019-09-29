@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://ehcache.org/ehcache.xsd">
+
+	<diskStore path="java.io.tmpdir/shiro-ehcache" />
+
+	<cache name="passwordRetryCache" maxElementsInMemory="10000" eternal="false" timeToIdleSeconds="3600" timeToLiveSeconds="0" overflowToDisk="true" statistics="true" />
+
+	<cache name="authorizationCache" maxElementsInMemory="10000" eternal="false" timeToIdleSeconds="3600" timeToLiveSeconds="0" overflowToDisk="true" statistics="true" />
+
+	<cache name="authenticationCache" maxElementsInMemory="10000" eternal="false" timeToIdleSeconds="3600" timeToLiveSeconds="0" overflowToDisk="true" statistics="true" />
+
+	<cache name="shiro-kickout-session" maxElementsInMemory="10000" eternal="false" timeToIdleSeconds="3600" timeToLiveSeconds="0" overflowToDisk="true" statistics="true" />
+
+	<cache name="shiro-activeSessionCache" maxElementsInMemory="10000" eternal="false" overflowToDisk="true" timeToLiveSeconds="0" timeToIdleSeconds="0" diskPersistent="true" diskExpiryThreadIntervalSeconds="600" />
+
+	<cache name="org.apache.shiro.realm.text.PropertiesRealm-0-accounts" maxElementsInMemory="1000" eternal="true" overflowToDisk="true" />
+
+	<!-- 
+		maxElementsInMemory 最大缓存元素个数
+		eternal 缓存是否永久有效，一般都是false
+		timeToIdleSeconds 最长空闲时间
+		timeToLiveSeconds 最长生命周期
+		overflowToDisk 是否持久化到磁盘
+		maxElementsOnDisk 磁盘上放的最大元素个数
+		diskPersistent 磁盘上是否永久有效
+		diskExpiryThreadIntervalSeconds 清理周期
+		memoryStoreEvictionPolicy 清理规则，LRU最近最少使用 FIFO先进先出
+	-->
+	<defaultCache maxElementsInMemory="10000" eternal="false" timeToIdleSeconds="120" timeToLiveSeconds="120" overflowToDisk="true" diskPersistent="false" diskExpiryThreadIntervalSeconds="120" />
+</ehcache>

@@ -1,0 +1,58 @@
+spring:
+    profiles:
+        active: dev
+        include: quartz
+    redis:
+        jedis:
+            pool:
+                max-idle: 5
+    mvc:
+        favicon:
+            enabled: false
+        static-path-pattern: /static/**
+    servlet:
+        multipart:
+            max-file-size: 50MB
+            max-request-size: 50MB
+    datasource:
+        type: com.alibaba.druid.pool.DruidDataSource
+        use-global-data-source-stat: true
+        druid:
+            name: master
+            filters: stat
+            initial-size: 20
+            min-idle: 20
+            max-active: 100
+            max-wait: 60000
+            log-abandoned: false
+            remove-abandoned: false
+            validation-query: select 1
+            max-open-prepared-statements: 100
+            min-evictable-idle-time-millis: 300000
+            web-stat-filter:
+                exclusions: /static/*,/druid/*
+            stat-view-servlet:
+                login-username: druid
+                login-password: a
+            filter:
+                config:
+                    enabled: true
+                stat:
+                    merge-sql: true
+                    log-slow-sql: true
+                    slow-sql-millis: 5000
+                wall:
+                    config:
+                        multi-statement-allow: true
+mybatis:
+    configuration:
+        jdbc-type-for-null: 'NULL'
+        default-statement-timeout: 120
+        map-underscore-to-camel-case: true
+    type-aliases-package: com.neusoft.biz
+    mapper-locations: classpath:com/neusoft/biz/**/dao/*Mapper.xml
+pagehelper:
+    helper-dialect: mysql
+    reasonable: true
+    support-methods-arguments: true
+    params: count=countSql

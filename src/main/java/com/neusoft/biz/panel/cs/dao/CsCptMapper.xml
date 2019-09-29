@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.panel.cs.dao.CsCptMapper">
+
+    <!-- 审核：保存 -->
+    <update id="update">
+		<![CDATA[
+            update d_panel_cpt
+               set cbu_sn             = #{cbuSn},
+                   bad_phase          = #{badPhase},
+                   failure_type       = #{failureType},
+                   part_name          = #{partName},
+                   panel_module_model = #{panelModuleModel},
+                   panel_module_sn    = #{panelModuleSn},
+                   oc_model           = #{ocModel},
+                   oc_sn              = #{ocSn},
+                   failure_remark     = #{failureRemark},
+                   exchange_test_rs   = #{exchangeTestRs},
+                   other_check_rs     = #{otherCheckRs},
+                   remark             = #{remark},
+                   status             = #{status},
+                   priority           = #{priority},
+                   order_id           = #{orderId},
+                   order_no           = null,
+                   cust_order_no      = null,
+                   mod_user_id        = #{modUserId},
+                   mod_time           = now()
+             where complaint_id = #{complaintId}
+        ]]>
+	</update>
+
+    <!-- 批量修改优先级 -->
+    <update id="updatePriority">
+        update d_panel_cpt set priority = #{priority} where complaint_id in
+        <foreach item="e" collection='ids.split(",")' open="(" separator="," close=")">
+            #{e}
+        </foreach>
+    </update>
+
+    <!-- 初审意见/更改解决方案 -->
+    <update id="initial">
+        <![CDATA[
+			update d_panel_cpt
+			   set first_initial_type = if(isnull(first_initial_type), #{curInitialType}, first_initial_type),
+			       first_initial_time = if(isnull(first_initial_time), now(), first_initial_time),
+			       cur_initial_type   = #{curInitialType},
+			       cur_initial_time   = now(),
+			       initial_remark     = #{logRemark},
+			       status             = #{status},
+			       
+		]]>
+        <if test="status == 4">
+            solution_type = null,
+            solution_desc = null,
+            spf_no = null,
+            spf_value_amount = null,
+            es_shipment_date = null,
+            shipment_date = null,
+            list_provide_time = null,
+            spf_delivered_type = null,
+            tracking_no = null,
+            reim_amount = null,
+            reim_app_confirm_time = null,
+            reim_app_scan_file = null,
+            first_solution_time = null,
+            final_solution_time = null,
+        </if>
+        close_time = null
+        where complaint_id = #{complaintId}
+    </update>
+
+    <!-- 解决方案 -->
+    <update id="solution">
+        <![CDATA[
+			update d_panel_cpt
+			   set status                = #{status},
+			       solution_type         = #{solutionType},
+			       solution_desc         = #{solutionDesc},
+			       spf_no                = #{spfNo},
+			       spf_value_amount      = #{spfValueAmount},
+			       spf_delivered_type    = #{spfDeliveredType},
+			       tracking_no           = #{trackingNo},
+			       reim_amount           = #{reimAmount},
+			       reim_app_scan_file    = #{reimAppScanFile},
+			       first_solution_time   = if(isnull(first_solution_time), now(), first_solution_time),
+		]]>
+        <if test="reimAppConfirmTime != null and reimAppConfirmTime != ''">reim_app_confirm_time = str_to_date(#{reimAppConfirmTime}, '%Y-%m-%d'),</if>
+        <if test="esShipmentDate != null and esShipmentDate != ''">es_shipment_date = str_to_date(#{esShipmentDate}, '%Y-%m-%d'),</if>
+        <if test="shipmentDate != null and shipmentDate != ''">shipment_date = str_to_date(#{shipmentDate}, '%Y-%m-%d'),</if>
+        <if test="listProvideTime != null and listProvideTime != ''">list_provide_time = str_to_date(#{listProvideTime}, '%Y-%m-%d'),</if>
+        final_solution_time = now() where complaint_id = #{complaintId}
+    </update>
+
+    <!-- 供应商变更 -->
+    <select id="qryVendorChg" resultType="map">
+        <![CDATA[
+			select (select concat(x.vendor_name, '(', x.vendor_code, ')') from b_vendor x where x.vendor_code = t.vendor_code) as vendor_code,
+			       date_format(t.start_time, '%Y-%m-%d %H:%i') as start_time,
+			       date_format(t.end_time, '%Y-%m-%d %H:%i') as end_time,
+			       remark
+			  from d_panel_cpt_vendor t
+			 where t.complaint_id = #{complaintId}
+		]]>
+        <!-- 供应商角色 -->
+        <if test="vendorCode != null">and t.vendor_code = #{vendorCode}</if>
+        order by t.start_time desc
+    </select>
+    <insert id="insertVendorChg">
+		<![CDATA[
+            update d_panel_cpt
+               set feedback_supplier_time = now(),
+                   vendor_code            = #{vendorCode},
+                   vendor_form_status     = 1
+             where complaint_id = #{complaintId};
+
+            update d_panel_cpt_vendor set end_time = now() where isnull(end_time) and complaint_id = #{complaintId};
+
+            insert into d_panel_cpt_vendor
+              (complaint_id, vendor_code, start_time, remark)
+            values
+              (#{complaintId}, #{vendorCode}, now(), #{remark});
+        ]]>
+	</insert>
+    <update id="updateVendorChg">
+		<![CDATA[
+            update d_panel_cpt set vendor_form_status = 1 where complaint_id = #{complaintId};
+            update d_panel_cpt_vendor set remark = #{remark} where isnull(end_time) and complaint_id = #{complaintId};
+        ]]>
+	</update>
+
+    <!-- 关闭供应商工单 -->
+    <update id="closedVendorFormStatus">
+		update d_panel_cpt set vendor_form_status = 5, close_supplier_time = now() where complaint_id = #{complaintId}
+	</update>
+
+</mapper>

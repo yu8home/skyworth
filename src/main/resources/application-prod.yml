@@ -1,0 +1,13 @@
+upload-img: /root/skyworthCpt/img/
+upload_attachment: /root/skyworthCpt/attachment/
+publicKey: MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAL9U+I5+y0TT3AEZFyc5jN21VqEtorrFaAg/zEvPjg5ak6z51RPXXEBmLxA0kmk0ptOS8RkOxTTSHqpxoZvTfwkCAwEAAQ==
+password: YnTz6NTFjJTU7z2RNtbgyImmnt65Q9X4ciOLybSoBLcgMgRuMpmUrxiMSbGkx/e38kl2rUPD+UmdFWDkHmZn1w==
+server:
+    port: 9001
+spring:
+    datasource:
+        druid:
+            url: jdbc:mysql://172.20.212.115:3306/hwptgd?allowMultiQueries=true&autoReconnect=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT
+            username: hwuser
+            password: ${password}
+            connection-properties: config.decrypt=true;config.decrypt.key=${publicKey}

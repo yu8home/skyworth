@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<base th:href="${basePath}">
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>Skyworth Panel Complaint System</title>
+<style type="text/css">
+html {
+	background: url("[[@{/static/images/login_bg.jpg}]]") no-repeat center/cover; min-height: 100%;
+}
+
+header {
+	width: 100%; line-height: 45px; top: 0; left: 0; font-size: 14px; position: fixed; vertical-align: middle; color: rgb(109, 113, 120); background-color: white; border-bottom: 1px solid rgb(218, 221, 222); color: rgb(109, 113, 120);
+}
+
+body {
+	font-family: "Microsoft YaHei"; min-height: 100%; background-color: rgb(255, 255, 255); -webkit-font-smoothing: antialiased;
+}
+
+.login_top {
+	width: 100%; height: 60px; border-bottom: 1px solid rgb(218, 221, 222);
+}
+
+.logindiv {
+	background: url("[[@{/static/images/login_frame.png}]]") no-repeat; width: 250px; height: 260px; top: 20%; right: 10%; position: absolute; animation: myfirst 1s; -o-animation: myfirst 1s; -moz-animation: myfirst 1s; -webkit-animation: myfirst 1s;
+}
+
+.logindiv>div {
+	text-align: center; padding-top: 10px;
+}
+
+.login_link {
+	right: 38px; bottom: 20px; color: rgb(109, 113, 120); font-size: 14px; position: absolute;
+}
+
+.inputxt {
+	border-radius: 3px; border: currentColor; border-image: none; padding-left: 10px; font-size: 14px; width: 70%; height: 30px;
+}
+
+.failp {
+	border-radius: 4px; border: 1px solid transparent; color: rgb(169, 68, 66); border-color: rgb(235, 204, 209); background-color: rgb(242, 222, 222); position: absolute; margin: 0; display: none; font-size: 12px; width: 100%; height: 22px; line-height: 22px;
+}
+
+button {
+	background: rgb(41, 135, 205); color: rgb(255, 255, 255); border-radius: 5px; border: 0px currentColor; border-image: none; width: 60%; height: 35px; line-height: 35px; font-size: 16px; cursor: pointer;
+}
+
+button:hover {
+	background: rgb(53, 158, 218); margin-top: -1px;
+}
+
+footer {
+	width: 100%; line-height: 35px; bottom: 0; left: 0; font-size: 14px; position: fixed; text-align: center; color: rgb(109, 113, 120); background-color: white; border-top: 1px solid rgb(218, 221, 222);
+}
+</style>
+<link rel="shortcut icon" type="image/x-icon" th:href="@{/static/favicon.ico}">
+<script type="text/javascript" th:src="@{/static/jquery-easyui/jquery.min.js}"></script>
+<script type="text/javascript" th:src="@{/static/jquery.md5.js}"></script>
+<script type="text/javascript">
+    $(function() {
+        // 防止iframe嵌入时被盗用
+        if (self != top) {
+            top.location.href = self.location.href;
+        }
+
+        $("input").on("keyup", function(event) {
+            if (event.keyCode === 13) {
+                $("button").click();
+            }
+        });
+
+        $("button").on("click", function() {
+            $.post('logon', {
+                userCode : $("#userCode").val(),
+                password : $.md5($("#password").val())
+            }, function(rs) {
+                if (rs.code) {
+                    window.location.href = 'index-page';
+                } else {
+                    $(".failp").html(rs.data).show();
+                }
+            }, 'json');
+        });
+    });
+
+    // 国际化语言-切换
+    function loging(langauage) {
+        window.location.href = 'loging/' + langauage;
+    }
+</script>
+</head>
+
+<body>
+	<header>
+		<div style="padding: 0 60px; font-size: 18px; float: left;">Skyworth Panel Complaint System</div>
+		<input type="radio" onclick="loging('zh')">
+		Chinese&nbsp;
+		<input type="radio" onclick="loging('en')">
+		English
+	</header>
+
+	<div class="logindiv">
+		<div>
+			<h3>User Login</h3>
+		</div>
+		<div>
+			<input type="text" id="userCode" class="inputxt" placeholder="User Account">
+		</div>
+		<div>
+			<input type="password" id="password" class="inputxt" placeholder="Password">
+		</div>
+		<div>
+			<p class="failp" />
+		</div>
+		<div style="padding-top: 30px;">
+			<button>Login</button>
+		</div>
+	</div>
+	<footer>Copyright (c) 2018-2020 Neusoft All rights reserved.</footer>
+</body>
+</html>

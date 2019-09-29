@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.report.dao.ReportMapper">
+
+	<select id="qryCustCptTotal" resultType="map">
+        <![CDATA[
+			select concat(t.cust_serv_name, '(', t.cust_serv_code, ')') as cust_serv_name,
+			       t.feedback_cs_time,
+			       count(1) as cnt
+			  from (select d.cust_serv_code,
+			               d.cust_serv_name,
+			               date_format(a.feedback_cs_time, '%Y-%m') as feedback_cs_time
+			          from d_panel_cpt a, s_user b, b_cs_2_cust c, b_cs d
+			         where a.create_user_id = b.user_id
+			           and b.user_code = c.user_code
+		]]>
+		<if test="isValid != null">and d.is_valid = #{isValid}</if>
+		and c.cust_serv_code = d.cust_serv_code) t
+		group by t.cust_serv_code, t.cust_serv_name, t.feedback_cs_time
+		order by t.feedback_cs_time desc, t.cust_serv_code
+	</select>
+
+	<select id="qryKPIOne" resultType="map">
+        <![CDATA[
+			select concat(t.cust_serv_name, '(', t.cust_serv_code, ')') as cust_serv_name,
+			       t.goodcnt,
+			       t.badcnt,
+			       (t.goodcnt + t.badcnt) total,
+			       convert(t.badcnt * 100 / (t.goodcnt + t.badcnt), decimal(12, 2)) as rpercent
+			  from (select d.cust_serv_code,
+			               d.cust_serv_name,
+			               sum(if(datediff(a.first_initial_time, a.feedback_cs_time) <= 2, 1, 0)) as goodcnt,
+			               sum(if(datediff(a.first_initial_time, a.feedback_cs_time) > 2, 1, 0)) as badcnt
+			          from d_panel_cpt a, s_user b, b_cs_2_cust c, b_cs d
+			         where a.create_user_id = b.user_id
+			           and b.user_code = c.user_code
+			           and c.cust_serv_code = d.cust_serv_code
+			           and a.feedback_cs_time is not null
+			           and a.first_initial_time is not null
+		]]>
+		<if test="firstInitialTimeStart != null and firstInitialTimeStart != ''">and a.first_initial_time &gt;= str_to_date(concat(#{firstInitialTimeStart}, ' 00:00'), '%Y-%m-%d %H:%i')</if>
+		<if test="firstInitialTimeEnd != null and firstInitialTimeEnd != ''">and a.first_initial_time &lt;= str_to_date(concat(#{firstInitialTimeEnd}, ' 23:59'), '%Y-%m-%d %H:%i')</if>
+		group by d.cust_serv_code, d.cust_serv_name) t
+		order by t.cust_serv_code
+	</select>
+
+	<select id="qryKPITwo" resultType="map">
+        <![CDATA[
+			select concat(t.cust_serv_name, '(', t.cust_serv_code, ')') as cust_serv_name,
+			       t.goodcnt,
+			       t.badcnt,
+			       (t.goodcnt + t.badcnt) total,
+			       convert(t.badcnt * 100 / (t.goodcnt + t.badcnt), decimal(12, 2)) as rpercent
+			  from (select d.cust_serv_code,
+			               d.cust_serv_name,
+			               sum(if(datediff(a.first_solution_time, a.feedback_cs_time) <= 10, 1, 0)) as goodcnt,
+			               sum(if(datediff(a.first_solution_time, a.feedback_cs_time) > 10, 1, 0)) as badcnt
+			          from d_panel_cpt a, s_user b, b_cs_2_cust c, b_cs d
+			         where a.create_user_id = b.user_id
+			           and b.user_code = c.user_code
+			           and c.cust_serv_code = d.cust_serv_code
+			           and a.feedback_cs_time is not null
+			           and a.first_solution_time is not null
+		]]>
+		<if test="firstSolutionTimeStart != null and firstSolutionTimeStart != ''">and a.first_solution_time &gt;= str_to_date(concat(#{firstSolutionTimeStart}, ' 00:00'), '%Y-%m-%d %H:%i')</if>
+		<if test="firstSolutionTimeEnd != null and firstSolutionTimeEnd != ''">and a.first_solution_time &lt;= str_to_date(concat(#{firstSolutionTimeEnd}, ' 23:59'), '%Y-%m-%d %H:%i')</if>
+		group by d.cust_serv_code, d.cust_serv_name) t
+		order by t.cust_serv_code
+	</select>
+
+</mapper>

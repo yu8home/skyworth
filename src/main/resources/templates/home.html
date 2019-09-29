@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('主页')" />
+<meta http-equiv="refresh" content="300">
+<script type="text/javascript">
+    $(function() {
+        $('#dg-cust').hide();
+        $('#dg-cs').hide();
+        $('#dg-suplier').hide();
+
+        if (g_roleType == 'C') {
+            $('#dg-cust').show();
+            $('#dg-cust').datagrid({
+                url : 'form/qryForPage',
+                fit : true,
+                onClickRow : function(i, r) {
+                    $(this).datagrid('clearSelections');
+                }
+            });
+        } else if (g_roleType == 'S') {
+            $('#dg-suplier').show();
+            $('#dg-suplier').datagrid({
+                url : 'form/qryForPage',
+                fit : true,
+                onClickRow : function(i, r) {
+                    $(this).datagrid('clearSelections');
+                }
+            });
+        } else {
+            $('#dg-cs').show();
+            $('#dg-cs').datagrid({
+                url : 'form/qryForPage',
+                fit : true,
+                nowrap : false,
+                onClickRow : function(i, r) {
+                    $(this).datagrid('clearSelections');
+                }
+            });
+        }
+    });
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<table id="dg-cust" th:title="#{pending.form}" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'complaintNo',width:'12%'" th:text="#{complaintNo}">客诉单号</th>
+				<th data-options="field:'statusName',width:'21%'" th:text="#{status}">状态</th>
+				<th data-options="field:'custComplaintNo',width:'18%'" th:text="#{custComplaintNo}">客户投诉号</th>
+				<th data-options="field:'feedbackCsTime',width:'15%'" th:text="#{feedback.cs.time}">反馈客服时间</th>
+				<th data-options="field:'orderNo',width:'14%'" th:text="#{orderNo}">订单号</th>
+				<th data-options="field:'solutionType',width:'20%'" th:text="#{solution.type}">解决方案类型</th>
+			</tr>
+		</thead>
+	</table>
+
+	<table id="dg-cs" th:title="#{pending.form}" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'complaintNo',width:'12%'" th:text="#{complaintNo}">客诉单号</th>
+				<th data-options="field:'statusName',width:'23%'" th:text="#{status}">状态</th>
+				<th data-options="field:'vendorFormStatusName',width:'20%'" th:text="#{vendor.form.status}">供应商工单状态</th>
+				<th data-options="field:'priorityName',width:'8%'" th:text="#{priority}">优先级</th>
+				<th data-options="field:'feedbackCsTime',width:'15%'" th:text="#{feedback.cs.time}">反馈客服时间</th>
+				<th data-options="field:'createUserName',width:'22%'" th:text="#{cust.name}">客户名称</th>
+			</tr>
+		</thead>
+	</table>
+
+	<table id="dg-suplier" th:title="#{pending.form}" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'complaintNo',width:'12%'" th:text="#{complaintNo}">客诉单号</th>
+				<th data-options="field:'statusName',width:'23%'" th:text="#{status}">状态</th>
+				<th data-options="field:'feedbackCsTime',width:'18%'" th:text="#{feedback.supplier.time}">反馈供应商时间</th>
+				<th data-options="field:'soldToCountry',width:'14%'" th:text="#{sold.country}">销往国家</th>
+				<th data-options="field:'failureRemark',width:'33%'" th:text="#{phenomenon.desc}">故障现象描述</th>
+			</tr>
+		</thead>
+	</table>
+</body>
+</html>

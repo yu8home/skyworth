@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('客服专员历史工单')" />
+<script type="text/javascript">
+    $(function() {
+        // “超级管理员、管理员”有客服专员查询条件
+        if (g_roleType == "A" || g_roleType == "M") {
+            $("#td_cs_title").show();
+            $("#td_cs_content").show();
+        } else {
+            $("#td_cs_title").hide();
+            $("#td_cs_content").hide();
+        }
+
+        $('#dg').datagrid({
+            url : 'form/qryForPage?formMenuType=6',
+            fit : true,
+            selectOnCheck : false,
+            toolbar : '.dgtoolbar',
+            onClickRow : function(i, r) {
+                $('#dg').datagrid('clearSelections');
+                $('#dg').datagrid('checkRow', i);
+                checkBnt();
+            },
+            onCheck : checkBnt,
+            onUncheck : checkBnt,
+            onCheckAll : checkBnt,
+            onUncheckAll : checkBnt,
+            onLoadSuccess : function(i, r) {
+                $("#editBnt, #viewBnt, #solutionExtBnt, #exportBnt, #batchExcelExportBnt").linkbutton('disable');
+            }
+        });
+
+        $("#frm fieldset input").attr("disabled", true);
+        inputDisabled([ "complaintNo", "custComplaintNo", "feedbackCsTime", "statusName" ], $("#frm"));
+        $('#saveRemarkBnt', "#frmView").hide();
+        tdImgDdlclick('frm');
+        tdImgDdlclick('frmView');
+
+        // 双击扫描件
+        $("#ww-solution-ext #reimAppScanFile").textbox('textbox').bind("dblclick", function() {
+            $("#fileDialog").fileUpload({
+                fileBox : $("#ww-solution-ext #reimAppScanFile"),
+                displayDoc : $("#ww-solution-ext #reimAppScanFileTd")
+            });
+        });
+
+        // 解决方案类型-变更
+        $("#ww-solution-ext #solutionType").combobox({
+            onChange : function(n, o) {
+                var dlg = $("#ww-solution-ext");
+                // 根据类型来显示
+                if (n == 'Replacement') {
+                    dlg.find(".Replacement").show();
+                    dlg.find(".Reimbursement").hide();
+                } else if (n == 'Reimbursement') {
+                    dlg.find(".Replacement").hide();
+                    dlg.find(".Reimbursement").show();
+                } else {
+                    dlg.find(".Replacement").hide();
+                    dlg.find(".Reimbursement").hide();
+                }
+            }
+        });
+    });
+
+    function checkBnt() {
+        $("#editBnt, #viewBnt, #solutionExtBnt, #exportBnt").linkbutton('disable');
+        var rows = $('#dg').datagrid('getChecked');
+        if (rows.length == 1) {
+            $("#editBnt, #viewBnt, #solutionExtBnt, #exportBnt").linkbutton('enable');
+            $("#batchExcelExportBnt").linkbutton('enable');
+        } else if (rows.length > 1) {
+            $("#batchExcelExportBnt").linkbutton('enable');
+        }
+    }
+
+    function edit() {
+        var _complaintId = $('#dg').datagrid("getSelected").complaintId;
+        $.post('form/edit', {
+            complaintId : _complaintId
+        }, function(rs) {
+            $('#frm').form('load', rs);
+            editAfterImg('frm');
+
+            var dlg = $('#ww');
+            dlg.dialog({
+                title : '[[#{panel.formhis.cs}]]-[[#{edit}]]',
+                maximized : true,
+                toolbar : [ {
+                    text : bnt_save,
+                    iconCls : 'icon-save',
+                    handler : function() {
+                        $("#frm").form('submit', {
+                            url : 'panel/cscpt/update',
+                            success : function(rs) {
+                                var json = $.parseJSON(rs);
+                                if (json.code) {
+                                    tipSuccess();
+                                    dlg.dialog('close');
+                                } else {
+                                    tipFail(json.data);
+                                }
+                            }
+                        });
+                    }
+                }, rebackBnt(dlg) ]
+            }).dialog('center').dialog('open');
+        });
+    }
+
+    function doSearch() {
+        $('#qryFrmDiv').qryFormDialog({
+            dg : 'dg'
+        });
+    }
+
+    function excelExport() {
+        window.open('panel/cscpt/excelExport?complaintId=' + $('#dg').datagrid("getSelected").complaintId);
+    }
+
+    function batchExcelExport() {
+        window.open('panel/cscpt/batchExcelExport?formMenuType=6&' + $('#qryFrmDiv form').serialize());
+    }
+
+    function batchExcelExport2() {
+        var ids = [];
+        var rows = $('#dg').datagrid("getChecked");
+        if (rows.length > 5) {
+            $.messager.show({
+                msg : "最多可导出5条记录"
+            });
+            return;
+        }
+        for (var i = 0; i < rows.length; i++) {
+            ids.push(rows[i].complaintId);
+        }
+        $.messager.confirm('提示', '包含图片的导出需要长时间等待，是否确认“批量导出”？', function(r) {
+            if (r) {
+                window.open('panel/cscpt/batchExcelExportPic?ids=' + ids.join(","));
+            }
+        });
+    }
+
+    function view() {
+        var dlg = $('#csCptView');
+        var std = $('#dg').datagrid("getSelected");
+        var _complaintId = std.complaintId;
+        var _status = std.status;
+        dlg.find("input,textarea").attr("disabled", true);
+
+        $.post('form/edit', {
+            complaintId : _complaintId
+        }, function(rs) {
+            setViewValue(dlg, rs);
+            editAfterImg('frmView');
+
+            showSolution();
+            createDownLoadA(dlg.find("#reimAppScanFileTd"), dlg.find("input[name=reimAppScanFile]").val());
+
+            $('#dg-suplier').datagrid({
+                url : 'panel/cscpt/qryVendorChg?complaintId=' + _complaintId
+            });
+            $('#dg-suplierConfirmLog').datagrid({
+                url : 'panel/vendorcpt/qryForList?complaintId=' + _complaintId
+            });
+            $('#dg-formlog').datagrid({
+                url : 'form/qryFormLog?complaintId=' + _complaintId
+            });
+
+            dlg.dialog({
+                title : '[[#{panel.formhis.cs}]]-[[#{view}]]',
+                maximized : true,
+                onOpen : function() {
+                    dlg.find(".easyui-tabs").tabs('select', 0);
+                }
+            }).dialog('center').dialog('open');
+        }, 'json');
+    }
+
+    function solutionExt() {
+        var std = $('#dg').datagrid("getChecked")[0];
+        var dlg = $("#ww-solution-ext");
+        var frm = dlg.find("form");
+        var _solutionType = std.solutionType;
+        // 赋值
+        frm.find("input[name=complaintId]").val(std.complaintId);
+        frm.find("input[name=status]").val(std.status);
+        frm.find("#solutionType").textbox("setValue", _solutionType);
+        frm.find("#spfNo").textbox("setValue", std.spfNo);
+        frm.find("#spfValueAmount").numberbox("setValue", std.spfValueAmount);
+        frm.find("#esShipmentDate").datebox("setValue", std.esShipmentDate);
+        frm.find("#shipmentDate").datebox("setValue", std.shipmentDate);
+        frm.find("#listProvideTime").datebox("setValue", std.listProvideTime);
+        frm.find("#spfDeliveredType").combobox("setValue", std.spfDeliveredType);
+        frm.find("#trackingNo").textbox("setValue", std.trackingNo);
+        frm.find("#reimAmount").numberbox("setValue", std.reimAmount);
+        frm.find("#reimAppConfirmTime").datebox("setValue", std.reimAppConfirmTime);
+        frm.find("#reimAppScanFile").textbox("setValue", std.reimAppScanFile);
+        frm.find("#solutionDesc").textbox("setValue", std.solutionDesc);
+        // 根据类型来显示
+        if (_solutionType == 'Replacement') {
+            dlg.find(".Replacement").show();
+            dlg.find(".Reimbursement").hide();
+        } else if (_solutionType == 'Reimbursement') {
+            dlg.find(".Replacement").hide();
+            dlg.find(".Reimbursement").show();
+        } else {
+            dlg.find(".Replacement").hide();
+            dlg.find(".Reimbursement").hide();
+        }
+        createDownLoadA(dlg.find("#reimAppScanFileTd"), dlg.find("#reimAppScanFile").textbox("getValue"));
+
+        dlg.dialog({
+            title : '[[#{bnt.solution.ext}]]',
+            toolbar : [ {
+                text : bnt_save,
+                iconCls : 'icon-save',
+                handler : function() {
+                    frm.form('submit', {
+                        success : function(rs) {
+                            var json = $.parseJSON(rs);
+                            if (json.code) {
+                                tipSuccess();
+                                dlg.dialog('close');
+                                $('#dg').datagrid('reload');
+                            } else {
+                                tipFail(json.data);
+                            }
+                        }
+                    });
+                }
+            }, rebackBnt(dlg) ],
+            onClose : function() {
+                frm.form('clear');
+            }
+        }).dialog('center').dialog('open');
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<shiro:hasRole name="manager">
+			<a id="editBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="edit()" th:text="#{bnt.edit}">编辑</a>
+		</shiro:hasRole>
+		<a id="viewBnt" class="easyui-linkbutton" data-options="iconCls:'icon-view'" onclick="view()" th:text="#{bnt.view}">查看</a>
+		<a id="solutionExtBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="solutionExt()" th:text="#{bnt.solution.ext}">方案扩展信息</a>
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-search'" onclick="doSearch()" th:text="#{bnt.qry}">查询</a>
+		<a id="exportBnt" class="easyui-linkbutton" data-options="iconCls:'icon-excel'" onclick="excelExport()" th:text="#{bnt.export}">导出</a>
+		<a class="easyui-linkbutton easyui-tooltip" data-options="iconCls:'icon-excel'" title="按“查询条件”批量导出" onclick="batchExcelExport()" th:text="#{bnt.batchExport}">批量导出</a>
+		<a id="batchExcelExportBnt" class="easyui-linkbutton easyui-tooltip" data-options="iconCls:'icon-excel'" title="包含“图片”批量导出" onclick="batchExcelExport2()">批量导出</a>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'ck',checkbox:true" />
+				<th data-options="field:'complaintNo',width:'12%'" th:text="#{complaintNo}">客诉单号</th>
+				<th data-options="field:'curInitialType',width:'15%'" th:text="#{initial.type}">初审意见类型</th>
+				<th data-options="field:'solutionType',width:'13%'" th:text="#{solution.type}">解决方案类型</th>
+				<th data-options="field:'feedbackCsTime',width:'15%'" th:text="#{feedback.cs.time}">反馈客服时间</th>
+				<th data-options="field:'confirmCloseTime',width:'15%'" th:text="#{confirm.closetime}">确认闭环时间</th>
+				<th data-options="field:'orderNo',width:'10%'" th:text="#{orderNo}">订单号</th>
+				<th data-options="field:'movement',width:'10%'" th:text="#{chassis}">机芯</th>
+				<th data-options="field:'ourModel',width:'13%'" th:text="#{ourModel}">我司型号</th>
+				<th data-options="field:'custModel',width:'13%'" th:text="#{custModel}">买家型号</th>
+				<th data-options="field:'badPhase',width:'7%'" th:text="#{bad.phase}">不良阶段</th>
+				<th data-options="field:'screen',width:'15%'" th:text="#{screen}">配屏</th>
+				<th data-options="field:'failureType',width:'25%'" th:text="#{phenomenon.type}">故障现象类型</th>
+				<th data-options="field:'createUserName',width:'35%'" th:text="#{cust.name}">客户名称</th>
+				<th data-options="field:'createTime',width:'15%'" th:text="#{createTime}">创建时间</th>
+			</tr>
+		</thead>
+	</table>
+
+
+	<!-- 查询条件 -->
+	<div id="qryFrmDiv" class="easyui-dialog dlgForm2" data-options="height:500,closed:true">
+		<form>
+			<table class="qryTable">
+				<tr>
+					<td th:text="#{complaintNo}">客诉单号</td>
+					<td>
+						<input class="easyui-textbox" name="complaintNo">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{initial.type}">初审意见类型</td>
+					<td>
+						<input class="easyui-combobox" name="curInitialType" data-options="url:'console/sys/dict/selectDict/1111',panelHeight:'auto'">
+					</td>
+					<td th:text="#{solution.type}">解决方案类型</td>
+					<td>
+						<input class="easyui-combobox" name="solutionType" data-options="url:'console/sys/dict/selectDict/1112',panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{phenomenon.type}">故障现象类型</td>
+					<td>
+						<input class="easyui-combobox" name="failureType" data-options="url:'console/sys/dict/selectDict/1102',panelHeight:300">
+					</td>
+					<td th:text="#{suplier.code}">供应商账号</td>
+					<td>
+						<input class="easyui-combobox" name="vendorCode" data-options="valueField:'vendorCode',textField:'vendorName',url:'archives/vendor/selectVendor?isValid=1',panelHeight:300">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{feedback.cs.time.start}">反馈客服时间(始)</td>
+					<td>
+						<input class="Wdate" id="feedbackCsTimeStart" name="feedbackCsTimeStart" onfocus="WdatePicker({isShowClear:true,readOnly:true,maxDate:'%y-%M-%d'})">
+					</td>
+					<td th:text="#{feedback.cs.time.end}">反馈客服时间(止)</td>
+					<td>
+						<input class="Wdate" id="feedbackCsTimeEnd" name="feedbackCsTimeEnd" onfocus="WdatePicker({isShowClear:true,readOnly:true,minDate:'#F{$dp.$D(\'feedbackCsTimeStart\')}',maxDate:'%y-%M-%d'})">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{confirm.closetime.start}">确认闭环时间(始)</td>
+					<td>
+						<input class="Wdate" id="confirmCloseTimeStart" name="confirmCloseTimeStart" onfocus="WdatePicker({isShowClear:true,readOnly:true,maxDate:'%y-%M-%d'})">
+					</td>
+					<td th:text="#{confirm.closetime.end}">确认闭环时间(止)</td>
+					<td>
+						<input class="Wdate" id="confirmCloseTimeEnd" name="confirmCloseTimeEnd" onfocus="WdatePicker({isShowClear:true,readOnly:true,minDate:'#F{$dp.$D(\'confirmCloseTimeStart\')}',maxDate:'%y-%M-%d'})">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{bad.phase}">不良阶段</td>
+					<td>
+						<input class="easyui-combobox" name="badPhase" data-options="url:'console/sys/dict/selectDict/1001',panelHeight:'auto'">
+					</td>
+					<td th:text="#{part.name}">部件名称</td>
+					<td>
+						<input class="easyui-combobox" name="partName" data-options="url:'console/sys/dict/selectDict/1104',panelHeight:300">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{panel.module.model}">屏体模组型号</td>
+					<td>
+						<input class="easyui-textbox" name="panelModuleModel">
+					</td>
+					<td th:text="#{panel.module.sn}">屏体模组序列号</td>
+					<td>
+						<input class="easyui-textbox" name="panelModuleSn">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{oc.model}">玻璃型号</td>
+					<td>
+						<input class="easyui-textbox" name="ocModel">
+					</td>
+					<td th:text="#{oc.pcbi.sn}">玻璃序列号</td>
+					<td>
+						<input class="easyui-textbox" name="ocSn">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{orderNo}">订单号</td>
+					<td>
+						<input class="easyui-textbox" name="orderNo">
+					</td>
+					<td th:text="#{cust.name}">客户名称</td>
+					<td>
+						<input class="easyui-textbox" name="custName">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{orderType}">订单类型</td>
+					<td>
+						<input class="easyui-textbox" name="orderType">
+					</td>
+					<td th:text="#{brand}">品牌</td>
+					<td>
+						<input class="easyui-textbox" name="brand">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{chassis.model}">机芯\机型</td>
+					<td>
+						<input class="easyui-textbox" name="movementModel">
+					</td>
+					<td th:text="#{chassis}">机芯</td>
+					<td>
+						<input class="easyui-textbox" name="movement">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{ourModel}">我司型号</td>
+					<td>
+						<input class="easyui-textbox" name="ourModel">
+					</td>
+					<td th:text="#{custModel}">买家型号</td>
+					<td>
+						<input class="easyui-textbox" name="custModel">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{screen}">配屏</td>
+					<td>
+						<input class="easyui-textbox" name="screen">
+					</td>
+					<td th:text="#{sold.country}">销往国家</td>
+					<td>
+						<input class="easyui-textbox" name="soldToCountry">
+					</td>
+				</tr>
+				<tr>
+					<td id="td_cs_title">客服专员名称</td>
+					<td id="td_cs_content">
+						<input class="easyui-textbox" name="csCodeName">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+	<div id="ww" class="easyui-dialog" data-options="closed:true">
+		<form id="frm" method="post">
+			<input type="hidden" name="complaintId">
+			<input type="hidden" name="status">
+			<input type="hidden" name="orderId">
+			<table class="maxDlgForm">
+				<tr>
+					<td th:text="#{complaintNo}">客诉单号</td>
+					<td>
+						<input class="easyui-textbox" name="complaintNo">
+					</td>
+					<td th:text="#{custComplaintNo}">客户投诉号</td>
+					<td>
+						<input class="easyui-textbox" name="custComplaintNo">
+					</td>
+					<td th:text="#{feedback.cs.time}">反馈客服时间</td>
+					<td>
+						<input class="easyui-textbox" name="feedbackCsTime">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{cbu.sn}">整机序列号</td>
+					<td>
+						<input class="easyui-textbox" name="cbuSn" data-options="required:true">
+					</td>
+					<td th:text="#{bad.phase}">不良阶段</td>
+					<td>
+						<input class="easyui-combobox" name="badPhase" data-options="url:'console/sys/dict/selDict/1001',panelHeight:'auto',required:true">
+					</td>
+					<td th:text="#{status}">状态</td>
+					<td>
+						<input class="easyui-textbox" name="statusName" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{part.name}">部件名称</td>
+					<td>
+						<input class="easyui-combobox" name="partName" data-options="url:'console/sys/dict/selectDict/1104',panelHeight:300">
+					</td>
+					<td th:text="#{phenomenon.type}">故障现象类型</td>
+					<td colspan="3">
+						<input class="easyui-combobox" style="width: 83%" name="failureType" data-options="url:'console/sys/dict/selectDict/1102',panelHeight:300">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{panel.module.model}">屏体模组型号</td>
+					<td>
+						<input class="easyui-textbox" name="panelModuleModel" data-options="required:true">
+					</td>
+					<td th:text="#{panel.module.sn}">屏体模组序列号</td>
+					<td colspan="3">
+						<input class="easyui-textbox" style="width: 83%" name="panelModuleSn">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{oc.model}">玻璃型号</td>
+					<td>
+						<input class="easyui-textbox" name="ocModel" data-options="required:true">
+					</td>
+					<td th:text="#{oc.pcbi.sn}">玻璃序列号</td>
+					<td colspan="3">
+						<input class="easyui-textbox" style="width: 83%" name="ocSn">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{phenomenon.desc}">故障现象描述</td>
+					<td colspan="5">
+						<input class="easyui-textbox" style="width: 90%" name="failureRemark" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{mura.test.result}">对调试验/MURA测试结果</td>
+					<td colspan="5">
+						<input class="easyui-textbox" style="width: 90%" name="exchangeTestRs" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{other.checking.result}">其它试验方法/结果</td>
+					<td colspan="5">
+						<input class="easyui-textbox" style="width: 90%" name="otherCheckRs">
+					</td>
+				</tr>
+				<tr>
+					<td>备注</td>
+					<td colspan="5">
+						<input class="easyui-textbox" style="width: 90%; height: 60px;" name="remark" data-options="multiline:true">
+					</td>
+				</tr>
+			</table>
+
+			<fieldset>
+				<legend>订单信息</legend>
+				<table class="maxDlgForm">
+					<tr>
+						<td th:text="#{orderNo}">订单号</td>
+						<td>
+							<input class="easyui-textbox" name="orderNo">
+						</td>
+						<td th:text="#{cust.orderNo}">客户订单号</td>
+						<td>
+							<input class="easyui-textbox" name="custOrderNo">
+						</td>
+						<td th:text="#{chassis}">下单日期</td>
+						<td>
+							<input class="easyui-textbox" name="orderDate">
+						</td>
+					<tr>
+						<td th:text="#{chassis}">机芯</td>
+						<td>
+							<input class="easyui-textbox" name="movement">
+						</td>
+						<td th:text="#{ourModel}">我司型号</td>
+						<td>
+							<input class="easyui-textbox" name="ourModel">
+						</td>
+						<td th:text="#{custModel}">买家型号</td>
+						<td>
+							<input class="easyui-textbox" name="custModel">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{order.cust.name}">订单客户名称</td>
+						<td>
+							<input class="easyui-textbox" name="custName">
+						</td>
+						<td th:text="#{sold.country}">销往国家</td>
+						<td>
+							<input class="easyui-textbox" name="soldToCountry">
+						</td>
+						<td th:text="#{brand}">品牌</td>
+						<td>
+							<input class="easyui-textbox" name="brand">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{screen}">配屏</td>
+						<td>
+							<input class="easyui-textbox" name="screen">
+						</td>
+						<td th:text="#{order.quantity}">订单量</td>
+						<td>
+							<input class="easyui-textbox" name="orderQty">
+						</td>
+						<td th:text="#{inter.trade.terms}">国际贸易条款</td>
+						<td>
+							<input class="easyui-textbox" name="interTradeTerms">
+						</td>
+					</tr>
+					<tr>
+						<td>PID</td>
+						<td>
+							<input class="easyui-textbox" name="pid">
+						</td>
+						<td th:text="#{delivery.period}">走货期</td>
+						<td>
+							<input class="easyui-textbox" name="deliveryPeriod">
+						</td>
+					</tr>
+				</table>
+			</fieldset>
+			<div style="margin-top: 8px;"></div>
+			<table th:replace="x::tabImg" />
+		</form>
+	</div>
+
+	<!-- 方案扩展信息 -->
+	<div id="ww-solution-ext" class="easyui-dialog dlgForm2" data-options="height:400,closed:true">
+		<form method="post" action="panel/cscpt/solutionExt">
+			<input type="hidden" name="complaintId">
+			<input type="hidden" name="status">
+			<table>
+				<tr>
+					<td th:text="#{solution.type}">解决方案类型</td>
+					<td>
+						<input class="easyui-combobox" style="width: 180px;" id="solutionType" name="solutionType" data-options="url:'console/sys/dict/selDict/1112',required:true,panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr class="Replacement">
+					<td th:text="#{spfNo}">备损订单号</td>
+					<td>
+						<input class="easyui-textbox" style="width: 180px;" id="spfNo" name="spfNo">
+					</td>
+					<td th:text="#{spfValue.amount}">备损金额($)</td>
+					<td>
+						<input class="easyui-numberbox" style="width: 180px;" id="spfValueAmount" name="spfValueAmount" data-options="min:0,precision:2">
+					</td>
+				</tr>
+				<tr class="Replacement">
+					<td th:text="#{esShipmentDate}">预计出货日期</td>
+					<td>
+						<input class="easyui-datebox" style="width: 180px;" id="esShipmentDate" name="esShipmentDate">
+					</td>
+					<td th:text="#{shipmentDate}">出货日期</td>
+					<td>
+						<input class="easyui-datebox" style="width: 180px;" id="shipmentDate" name="shipmentDate">
+					</td>
+				</tr>
+				<tr class="Replacement">
+					<td th:text="#{listProvidet.date}">清单提供日期</td>
+					<td>
+						<input class="easyui-datebox" style="width: 180px;" id="listProvideTime" name="listProvideTime">
+					</td>
+					<td th:text="#{spfDelivered.type}">备损出货方式</td>
+					<td>
+						<input class="easyui-combobox" style="width: 180px;" id="spfDeliveredType" name="spfDeliveredType" data-options="url:'console/sys/dict/selDict/1116',panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr class="Replacement">
+					<td th:text="#{trackingNo}">追溯单号</td>
+					<td>
+						<input class="easyui-textbox" style="width: 180px;" id="trackingNo" name="trackingNo">
+					</td>
+				</tr>
+				<tr class="Reimbursement">
+					<td th:text="#{reim.amount}">赔偿费用($)</td>
+					<td>
+						<input class="easyui-numberbox" style="width: 180px;" id="reimAmount" name="reimAmount" data-options="min:0,precision:2">
+					</td>
+					<td th:text="#{reimApp.confirm.date}">赔偿申请确认日期</td>
+					<td>
+						<input class="easyui-datebox" style="width: 180px;" id="reimAppConfirmTime" name="reimAppConfirmTime">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{solution.desc}">解决方案描述</td>
+					<td colspan="3">
+						<input class="easyui-textbox" style="height: 60px; width: 90%;" id="solutionDesc" name="solutionDesc" data-options="multiline:true">
+					</td>
+				</tr>
+				<tr class="Reimbursement">
+					<td th:text="#{reimApp.scan.file}">赔偿申请扫描件</td>
+					<td colspan="3">
+						<input class="easyui-textbox" style="width: 90%;" id="reimAppScanFile" name="reimAppScanFile" data-options="readonly:true,prompt:'Double click to select'">
+					</td>
+				</tr>
+				<tr class="Reimbursement">
+					<td />
+					<td colspan="3" id="reimAppScanFileTd"></td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+	<div th:replace="panel/cs/csCptView::csCpt" />
+	<div id="fileDialog" />
+</body>
+</html>

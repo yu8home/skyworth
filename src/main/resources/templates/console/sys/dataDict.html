@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('数据字典')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'console/sys/dict/qryForPage',
+            fit : true,
+            toolbar : '.dgtoolbar',
+            onSelect : function(i, r) {
+                $("#editBnt").linkbutton('enable');
+            },
+            onLoadSuccess : function(i, r) {
+                $("#editBnt").linkbutton('disable');
+            }
+        });
+    });
+
+    function add() {
+        $('#ww').editFormDialog({
+            title : '数据字典-新建',
+            dg : 'dg',
+            bnts : [ {
+                url : 'console/sys/dict/add'
+            } ]
+        });
+    }
+
+    function edit() {
+        var std = $('#dg').datagrid("getSelected");
+        $('#frm').form('load', std);
+        $('#ww').editFormDialog({
+            title : '数据字典-编辑',
+            dg : 'dg',
+            bnts : [ {
+                url : 'console/sys/dict/update'
+            } ]
+        });
+    }
+
+    function doSearch(value, name) {
+        $('#dg').datagrid({
+            queryParams : {
+                remark : value
+            }
+        });
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="add()">新建</a>
+		<a id="editBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="edit()">编辑</a>
+		<div>
+			<input class="easyui-searchbox" data-options="searcher:doSearch,prompt:'编码、名称、备注'">
+		</div>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'dictCode',width:'6%'">编码</th>
+				<th data-options="field:'text',width:'26%'">名称</th>
+				<th data-options="field:'value',width:'26%'">值</th>
+				<th data-options="field:'orderNo',width:'5%'">排序</th>
+				<th data-options="field:'isValid',width:'8%',formatter:yesOrNoRender">是否有效</th>
+				<th data-options="field:'dictId',width:'7%'">节点ID</th>
+				<th data-options="field:'pid',width:'7%'">父节点ID</th>
+				<th data-options="field:'remark',width:'15%'">备注</th>
+			</tr>
+		</thead>
+	</table>
+
+	<div id="ww" class="easyui-dialog dlgForm1" data-options="height:380,closed:true">
+		<form id="frm" method="post">
+			<input type="hidden" name="dictId">
+			<table>
+				<tr>
+					<td>编码</td>
+					<td>
+						<input class="easyui-numberbox" name="dictCode" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>名称</td>
+					<td>
+						<input class="easyui-textbox" name="text" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>值</td>
+					<td>
+						<input class="easyui-textbox" name="value" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>父节点ID</td>
+					<td>
+						<input class="easyui-numberbox" name="pid">
+					</td>
+				</tr>
+				<tr>
+					<td>排序</td>
+					<td>
+						<input class="easyui-numberspinner" name="orderNo" data-options="required:true,min:1,max:99">
+					</td>
+				</tr>
+				<tr>
+					<td>是否有效</td>
+					<td>
+						<input class="easyui-combobox" name="isValid" value="1" data-options="url:'console/sys/dict/selDict/9000',panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td>备注</td>
+					<td>
+						<input class="easyui-textbox" name="remark" data-options="required:true">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</body>
+</html>

@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.panel.custcpt.dao.CustCptMapper">
+
+    <insert id="insert" keyProperty="complaintId" useGeneratedKeys="true">
+        <![CDATA[
+			insert into d_panel_cpt
+			  (complaint_no,
+			   cust_complaint_no,
+			   order_id,
+			   order_no,
+			   cust_order_no,
+			   cbu_sn,
+			   bad_phase,
+			   failure_type,
+			   part_name,
+			   panel_module_model,
+			   panel_module_sn,
+			   oc_model,
+			   oc_sn,
+			   failure_remark,
+			   exchange_test_rs,
+			   other_check_rs,
+			   status,
+			   is_temp_save,
+			   create_user_id,
+			   feedback_cs_time,
+			   cbu_sn_img1,
+			   cbu_sn_img2,
+			   cbu_sn_img3,
+			   bad_phen_img1,
+			   bad_phen_img2,
+			   bad_phen_img3,
+			   panel_module_sn_img1,
+			   panel_module_sn_img2,
+			   panel_module_sn_img3,
+			   oc_sn_img1,
+			   oc_sn_img2,
+			   oc_sn_img3,
+			   screen_fac_packing_img1,
+			   screen_fac_packing_img2,
+			   screen_fac_packing_img3,
+			   outside_packing_img1,
+			   outside_packing_img2,
+			   outside_packing_img3,
+			   inside_packing_img1,
+			   inside_packing_img2,
+			   inside_packing_img3,
+			   scrapped_img1,
+			   scrapped_img2,
+			   scrapped_img3)
+			values
+			  (#{complaintNo},
+			   #{custComplaintNo},
+			   #{orderId},
+			   #{orderNo},
+			   #{custOrderNo},
+			   #{cbuSn},
+			   #{badPhase},
+			   #{failureType},
+			   #{partName},
+			   #{panelModuleModel},
+			   #{panelModuleSn},
+			   #{ocModel},
+			   #{ocSn},
+			   #{failureRemark},
+			   #{exchangeTestRs},
+			   #{otherCheckRs},
+			   #{status},
+			   #{isTempSave},
+			   #{createUserId},
+		]]>
+        <choose>
+            <when test="status == 2">
+                now(),
+            </when>
+            <otherwise>
+                null,
+            </otherwise>
+        </choose>
+        <![CDATA[
+			   #{cbuSnImg1},
+			   #{cbuSnImg2},
+			   #{cbuSnImg3},
+			   #{badPhenImg1},
+			   #{badPhenImg2},
+			   #{badPhenImg3},
+			   #{panelModuleSnImg1},
+			   #{panelModuleSnImg2},
+			   #{panelModuleSnImg3},
+			   #{ocSnImg1},
+			   #{ocSnImg2},
+			   #{ocSnImg3},
+			   #{screenFacPackingImg1},
+			   #{screenFacPackingImg2},
+			   #{screenFacPackingImg3},
+			   #{outsidePackingImg1},
+			   #{outsidePackingImg2},
+			   #{outsidePackingImg3},
+			   #{insidePackingImg1},
+			   #{insidePackingImg2},
+			   #{insidePackingImg3},
+			   #{scrappedImg1},
+			   #{scrappedImg2},
+			   #{scrappedImg3})
+		]]>
+    </insert>
+
+    <update id="update">
+        <![CDATA[
+			update d_panel_cpt
+			   set complaint_no            = #{complaintNo},
+			       cust_complaint_no       = #{custComplaintNo},
+			       order_id                = #{orderId},
+			       order_no                = #{orderNo},
+			       cust_order_no           = #{custOrderNo},
+			       cbu_sn                  = #{cbuSn},
+			       bad_phase               = #{badPhase},
+			       failure_type            = #{failureType},
+			       part_name               = #{partName},
+			       panel_module_model      = #{panelModuleModel},
+			       panel_module_sn         = #{panelModuleSn},
+			       oc_model                = #{ocModel},
+			       oc_sn                   = #{ocSn},
+			       failure_remark          = #{failureRemark},
+			       exchange_test_rs        = #{exchangeTestRs},
+			       other_check_rs          = #{otherCheckRs},
+			       status                  = #{status},
+			       is_temp_save            = #{isTempSave},
+			       mod_user_id             = #{modUserId},
+			       mod_time                = now(),
+		]]>
+        <if test="status == 2">feedback_cs_time = now(),</if>
+        <![CDATA[
+			       cbu_sn_img1             = #{cbuSnImg1},
+			       cbu_sn_img2             = #{cbuSnImg2},
+			       cbu_sn_img3             = #{cbuSnImg3},
+			       bad_phen_img1           = #{badPhenImg1},
+			       bad_phen_img2           = #{badPhenImg2},
+			       bad_phen_img3           = #{badPhenImg3},
+			       panel_module_sn_img1    = #{panelModuleSnImg1},
+			       panel_module_sn_img2    = #{panelModuleSnImg2},
+			       panel_module_sn_img3    = #{panelModuleSnImg3},
+			       oc_sn_img1              = #{ocSnImg1},
+			       oc_sn_img2              = #{ocSnImg2},
+			       oc_sn_img3              = #{ocSnImg3},
+			       screen_fac_packing_img1 = #{screenFacPackingImg1},
+			       screen_fac_packing_img2 = #{screenFacPackingImg2},
+			       screen_fac_packing_img3 = #{screenFacPackingImg3},
+			       outside_packing_img1    = #{outsidePackingImg1},
+			       outside_packing_img2    = #{outsidePackingImg2},
+			       outside_packing_img3    = #{outsidePackingImg3},
+			       inside_packing_img1     = #{insidePackingImg1},
+			       inside_packing_img2     = #{insidePackingImg2},
+			       inside_packing_img3     = #{insidePackingImg3},
+			       scrapped_img1           = #{scrappedImg1},
+			       scrapped_img2           = #{scrappedImg2},
+			       scrapped_img3           = #{scrappedImg3}
+			 where complaint_id = #{complaintId}
+		]]>
+    </update>
+
+    <insert id="cloned">
+		<![CDATA[
+
+                    insert into d_panel_cpt
+                      (complaint_no,
+                       cust_complaint_no,
+                       order_id,
+                       order_no,
+                       cust_order_no,
+                       cbu_sn,
+                       bad_phase,
+                       failure_type,
+                       part_name,
+                       panel_module_model,
+                       panel_module_sn,
+                       oc_model,
+                       oc_sn,
+                       failure_remark,
+                       exchange_test_rs,
+                       other_check_rs,
+                       status,
+                       priority,
+                       is_temp_save,
+                       create_user_id,
+                       create_time,
+                       vendor_code)
+                      select get_coding_nextval('cptCode'),
+                             cust_complaint_no,
+                             order_id,
+                             order_no,
+                             cust_order_no,
+                             cbu_sn,
+                             bad_phase,
+                             failure_type,
+                             part_name,
+                             panel_module_model,
+                             panel_module_sn,
+                             oc_model,
+                             oc_sn,
+                             failure_remark,
+                             exchange_test_rs,
+                             other_check_rs,
+                             1,
+                             priority,
+                             1,
+                             create_user_id,
+                             now(),
+                             vendor_code
+                        from d_panel_cpt t
+                       where complaint_id = #{complaintId}
+
+        ]]>
+	</insert>
+
+    <!-- 管理员修改历史工单 -->
+    <update id="updateAdmin">
+		<![CDATA[
+
+                    update d_panel_cpt
+                       set complaint_no            = #{complaintNo},
+                           cust_complaint_no       = #{custComplaintNo},
+                           order_id                = #{orderId},
+                           cbu_sn                  = #{cbuSn},
+                           bad_phase               = #{badPhase},
+                           failure_type            = #{failureType},
+                           part_name               = #{partName},
+                           panel_module_model      = #{panelModuleModel},
+                           panel_module_sn         = #{panelModuleSn},
+                           oc_model                = #{ocModel},
+                           oc_sn                   = #{ocSn},
+                           failure_remark          = #{failureRemark},
+                           exchange_test_rs        = #{exchangeTestRs},
+                           other_check_rs          = #{otherCheckRs},
+                           mod_user_id             = #{modUserId},
+                           mod_time                = now(),
+                           feedback_cs_time        = str_to_date(#{feedbackCsTime}, '%Y-%m-%d %H:%i'),
+                           initial_time            = str_to_date(#{initialTime}, '%Y-%m-%d %H:%i'),
+                           first_solution_time     = str_to_date(#{firstSolutionTime}, '%Y-%m-%d %H:%i'),
+                           final_solution_time     = str_to_date(#{finalSolutionTime}, '%Y-%m-%d %H:%i'),
+                           feedback_supplier_time  = str_to_date(#{feedbackSupplierTime}, '%Y-%m-%d %H:%i'),
+                           close_time              = str_to_date(#{closeTime}, '%Y-%m-%d %H:%i')
+                     where complaint_id = #{complaintId}
+
+        ]]>
+	</update>
+
+    <!-- 客户确认清空对应的时间 -->
+    <update id="clearFormTime">
+        <![CDATA[
+			update d_panel_cpt
+			   set first_initial_type    = null,
+			       first_initial_time    = null,
+			       cur_initial_type      = null,
+			       cur_initial_time      = null,
+			       initial_remark        = null,
+			       solution_type         = null,
+			       solution_desc         = null,
+			       spf_no                = null,
+			       spf_value_amount      = null,
+			       es_shipment_date      = null,
+			       shipment_date         = null,
+			       list_provide_time     = null,
+			       spf_delivered_type    = null,
+			       tracking_no           = null,
+			       reim_amount           = null,
+			       reim_app_confirm_time = null,
+			       reim_app_scan_file    = null,
+			       first_solution_time   = null,
+			       final_solution_time   = null,
+			       close_time            = null
+			 where complaint_id in
+		]]>
+        <foreach item="e" collection='ids.split(",")' open="(" separator="," close=")">
+            #{e}
+        </foreach>
+    </update>
+
+    <delete id="delete">
+        delete from d_panel_cpt where complaint_id in
+        <foreach item="e" collection='ids.split(",")' open="(" separator="," close=")">
+            #{e}
+        </foreach>
+    </delete>
+
+    <!-- 批量提交 -->
+    <update id="batchSubmit">
+        insert into d_panel_cpt_log (complaint_id, status, create_user_id, create_time) values
+        <foreach item="e" collection='ids.split(",")' separator=",">
+            (#{e}, 2, #{createUserId}, now())
+        </foreach>
+        ;
+        update d_panel_cpt set feedback_cs_time = now(), status = 2 where complaint_id in
+        <foreach item="e" collection='ids.split(",")' open="(" separator="," close=")">
+            #{e}
+        </foreach>
+    </update>
+
+    <!-- 校验“屏体模组序列号、玻璃序列号”唯一 -->
+    <select id="checkFormSn" resultType="int">
+        <![CDATA[
+			select count(1)
+			  from d_panel_cpt
+			 where ((panel_module_sn is not null and panel_module_sn != '' and panel_module_sn = #{panelModuleSn})
+			        or (oc_sn is not null and oc_sn != '' and oc_sn = #{ocSn}))
+		]]>
+        <if test="complaintId != null">and complaint_id != #{complaintId}</if>
+    </select>
+    <select id="checkOcSn" resultType="String">
+        select oc_sn from d_panel_cpt t where t.oc_sn in
+        <foreach item="e" collection='ocSnList' open="(" separator="," close=")">
+            #{e}
+        </foreach>
+    </select>
+    <select id="checkModuleSn" resultType="String">
+        select panel_module_sn from d_panel_cpt t where t.panel_module_sn in
+        <foreach item="e" collection='moduleSnList' open="(" separator="," close=")">
+            #{e}
+        </foreach>
+    </select>
+
+    <select id="qryOrderByNo" resultType="order">
+		<![CDATA[
+
+                    select order_id, order_no, cust_order_no
+                      from d_order
+                     where (order_no is not null and order_no != '' and order_no = #{orderNo})
+                        or (cust_order_no is not null and cust_order_no != '' and cust_order_no = #{custOrderNo})
+
+        ]]>
+	</select>
+
+</mapper>

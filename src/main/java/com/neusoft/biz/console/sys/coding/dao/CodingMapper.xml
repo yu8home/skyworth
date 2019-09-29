@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.console.sys.coding.dao.CodingMapper">
+
+    <sql id="Base_Column_List">
+		<![CDATA[
+
+                    select t.rule_code,
+                           t.prefix,
+                           t.date_type,
+                           get_dict_name(9002, t.date_type) as date_type_name,
+                           t.suffix_digit,
+                           t.reset_value_type,
+                           get_dict_name(9002, t.reset_value_type) as reset_value_type_name,
+                           t.cur_value,
+                           t.remark
+                      from s_coding t
+
+        ]]>
+	</sql>
+
+    <select id="qryForList" resultType="coding">
+        <include refid="Base_Column_List"/>
+        order by t.rule_code desc
+    </select>
+
+    <select id="getInfo" resultType="coding">
+        <include refid="Base_Column_List"/>
+        where t.rule_code = #{ruleCode}
+    </select>
+
+    <insert id="insert">
+		<![CDATA[
+
+                    insert into s_coding
+                      (rule_code,
+                       prefix,
+                       date_type,
+                       suffix_digit,
+                       reset_value_type,
+                       cur_value,
+                       remark)
+                    values
+                      (#{ruleCode},
+                       #{prefix},
+                       #{dateType},
+                       #{suffixDigit},
+                       #{resetValueType},
+                       #{curValue},
+                       #{remark})
+
+        ]]>
+	</insert>
+
+    <update id="update">
+		<![CDATA[
+
+                    update s_coding
+                       set prefix           = #{prefix},
+                           date_type        = #{dateType},
+                           suffix_digit     = #{suffixDigit},
+                           reset_value_type = #{resetValueType},
+                           cur_value        = #{curValue},
+                           remark           = #{remark}
+                     where rule_code = #{ruleCode}
+
+        ]]>
+	</update>
+
+    <select id="getCodingNextVal" parameterType="string" resultType="string">
+		select get_coding_nextval(#{ruleCode})
+	</select>
+
+</mapper>

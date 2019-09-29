@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('功能日志')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'console/sys/logsystem/qryForPage',
+            fit : true,
+            toolbar : '#qryFrm',
+            onDblClickRow : function(rowIndex, rowData) {
+                $('#frm').form('load', rowData);
+                $('#ww').dialog('center').dialog('open');
+            }
+        });
+    });
+
+    function doSearch() {
+        $('#dg').datagrid({
+            queryParams : $('#qryFrm').serializeForm()
+        });
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<form id="qryFrm">
+		<table class="qryTable">
+			<tr>
+				<td>功能名称</td>
+				<td>
+					<input class="easyui-textbox" name="funcName">
+				</td>
+				<td>类方法</td>
+				<td>
+					<input class="easyui-textbox" name="classMethod">
+				</td>
+				<td>IP</td>
+				<td>
+					<input class="easyui-textbox" name="ip">
+				</td>
+				<td>&nbsp;</td>
+			</tr>
+			<tr>
+				<td>是否成功</td>
+				<td>
+					<input class="easyui-combobox" name="isSuccess" data-options="url:'console/sys/dict/selectDict/9000',panelHeight:'auto'">
+				</td>
+				<td>创建人</td>
+				<td>
+					<input class="easyui-textbox" name="createUserName">
+				</td>
+				<td>创建日期</td>
+				<td>
+					<input class="Wdate" name="createTime" onfocus="WdatePicker({isShowClear:true,readOnly:true,maxDate:'%y-%M-%d'})">
+				</td>
+				<td style="width: 10%; text-align: left;">
+					<a class="easyui-linkbutton" data-options="iconCls:'icon-search'" onclick="doSearch()">查询</a>
+				</td>
+			</tr>
+		</table>
+	</form>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'syslogId',hidden:true" />
+				<th data-options="field:'funcName',width:'15%'">功能名称</th>
+				<th data-options="field:'ip',width:'13%'">IP</th>
+				<th data-options="field:'runtime',width:'13%'">运行时长（毫秒）</th>
+				<th data-options="field:'isSuccess',width:'8%',formatter:yesOrNoRender">是否成功</th>
+				<th data-options="field:'createUserName',width:'35%'">创建人</th>
+				<th data-options="field:'createTime',width:'16%'">创建时间</th>
+			</tr>
+		</thead>
+	</table>
+
+	<div id="ww" class="easyui-dialog dlgForm2" title="功能日志-查看" data-options="height:420,closed:true">
+		<form id="frm">
+			<table>
+				<tr>
+					<td>功能名称</td>
+					<td>
+						<input class="easyui-textbox" name="funcName">
+					</td>
+					<td>IP</td>
+					<td>
+						<input class="easyui-textbox" name="ip">
+					</td>
+				</tr>
+				<tr>
+					<td>运行时长（毫秒）</td>
+					<td>
+						<input class="easyui-textbox" name="runtime">
+					</td>
+					<td>是否成功</td>
+					<td>
+						<input class="easyui-combobox" name="isSuccess" data-options="url:'console/sys/dict/selDict/9000',panelHeight:'auto'">
+					</td>
+				</tr>
+				<tr>
+					<td>创建时间</td>
+					<td>
+						<input class="easyui-textbox" name="createTime">
+					</td>
+				</tr>
+				<tr>
+					<td>创建人</td>
+					<td colspan="3">
+						<input class="easyui-textbox" name="createUserName" style="width: 95%">
+					</td>
+				</tr>
+				<tr>
+					<td>类方法</td>
+					<td colspan="3">
+						<input class="easyui-textbox" name="classMethod" style="width: 95%">
+					</td>
+				</tr>
+				<tr>
+					<td>异常信息</td>
+					<td colspan="3">
+						<input class="easyui-textbox" name="errMsg" data-options="multiline:true" style="width: 95%; height: 100px;">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('供应商历史工单')" />
+<script type="text/javascript">
+    $(function() {
+        // “超级管理员、管理员”有客服专员查询条件
+        if (g_roleType == "A" || g_roleType == "M") {
+            $("#td_cs_title").show();
+            $("#td_cs_content").show();
+        } else {
+            $("#td_cs_title").hide();
+            $("#td_cs_content").hide();
+        }
+
+        $('#dg').datagrid({
+            url : 'form/qryForPage?formMenuType=7',
+            fit : true,
+            toolbar : '.dgtoolbar',
+            onSelect : function(i, r) {
+                $("#viewBnt").linkbutton('enable');
+            },
+            onLoadSuccess : function(i, r) {
+                $("#viewBnt").linkbutton('disable');
+            }
+        });
+
+        tdImgDdlclick('frmView');
+    });
+
+    function doSearch() {
+        $('#qryFrmDiv').qryFormDialog({
+            dg : 'dg'
+        });
+    }
+
+    function batchExcelExport() {
+        window.open('panel/vendorcpt/excelExport?formMenuType=7&' + $('#qryFrmDiv form').serialize());
+    }
+
+    function view() {
+        var _complaintId = $('#dg').datagrid("getSelected").complaintId;
+        var dlg = $('#vendorCptView');
+        dlg.find("input,textarea").attr("disabled", true);
+
+        $.post('form/edit', {
+            complaintId : _complaintId
+        }, function(rs) {
+            setViewValue(dlg, rs);
+            editAfterImg('frmView');
+
+            $('#dg-suplierConfirmLog').datagrid({
+                url : 'panel/vendorcpt/qryForList',
+                queryParams : {
+                    vendorCode : g_userCode,
+                    complaintId : _complaintId
+                }
+            });
+            $('#dg-formlog').datagrid({
+                url : 'form/qryFormLog?complaintId=' + _complaintId
+            });
+
+            dlg.dialog({
+                title : '[[#{panel.formhis.cs}]]-[[#{view}]]',
+                maximized : true,
+                onOpen : function() {
+                    dlg.find(".easyui-tabs").tabs('select', 0);
+                }
+            }).dialog('center').dialog('open');
+        }, 'json');
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<a id="viewBnt" class="easyui-linkbutton" data-options="iconCls:'icon-view'" onclick="view()" th:text="#{bnt.view}">查看</a>
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-search'" onclick="doSearch()" th:text="#{bnt.qry}">查询</a>
+		<a class="easyui-linkbutton easyui-tooltip" data-options="iconCls:'icon-excel'" title="按“查询条件”批量导出" onclick="batchExcelExport()" th:text="#{bnt.batchExport}">批量导出</a>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'complaintNo',width:'12%'" th:text="#{complaintNo}">客诉单号</th>
+				<th data-options="field:'feedbackCsTime',width:'15%'" th:text="#{feedback.cs.time}">反馈客服时间</th>
+				<th data-options="field:'feedbackSupplierTime',width:'18%'" th:text="#{feedback.supplier.time}">反馈供应商时间</th>
+				<th data-options="field:'closeSupplierTime',width:'15%'" th:text="#{close.supplier.time}">关闭供应商时间</th>
+				<th data-options="field:'soldToCountry',width:'13%'" th:text="#{sold.country}">销往国家</th>
+				<th data-options="field:'badPhase',width:'7%'" th:text="#{bad.phase}">不良阶段</th>
+				<th data-options="field:'failureRemark',width:'30%'" th:text="#{phenomenon.desc}">故障现象描述</th>
+			</tr>
+		</thead>
+	</table>
+
+
+	<!-- 查询条件 -->
+	<div id="qryFrmDiv" class="easyui-dialog dlgForm2" data-options="height:350,closed:true">
+		<form>
+			<table class="qryTable">
+				<tr>
+					<td th:text="#{complaintNo}">客诉单号</td>
+					<td>
+						<input class="easyui-textbox" name="complaintNo">
+					</td>
+					<td id="td_cs_title" th:text="#{suplier.code}">供应商账号</td>
+					<td id="td_cs_content">
+						<input class="easyui-combobox" name="vendorCode" data-options="valueField:'vendorCode',textField:'vendorName',url:'archives/vendor/selectVendor',panelHeight:300">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{feedback.supplier.time.start}">反馈供应商时间(始)</td>
+					<td>
+						<input class="Wdate" id="feedbackSupplierTimeStart" name="feedbackSupplierTimeStart" onfocus="WdatePicker({isShowClear:true,readOnly:true,maxDate:'%y-%M-%d'})">
+					</td>
+					<td th:text="#{feedback.supplier.time.end}">反馈供应商时间(止)</td>
+					<td>
+						<input class="Wdate" id="feedbackSupplierTimeEnd" name="feedbackSupplierTimeEnd" onfocus="WdatePicker({isShowClear:true,readOnly:true,minDate:'#F{$dp.$D(\'feedbackSupplierTimeStart\')}',maxDate:'%y-%M-%d'})">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{close.supplier.time.start}">关闭供应商时间(始)</td>
+					<td>
+						<input class="Wdate" id="closeSupplierTimeStart" name="closeSupplierTimeStart" onfocus="WdatePicker({isShowClear:true,readOnly:true,maxDate:'%y-%M-%d'})">
+					</td>
+					<td th:text="#{close.supplier.time.end}">关闭供应商时间(止)</td>
+					<td>
+						<input class="Wdate" id="closeSupplierTimeEnd" name="closeSupplierTimeEnd" onfocus="WdatePicker({isShowClear:true,readOnly:true,minDate:'#F{$dp.$D(\'closeSupplierTimeStart\')}',maxDate:'%y-%M-%d'})">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{bad.phase}">不良阶段</td>
+					<td>
+						<input class="easyui-combobox" name="badPhase" data-options="url:'console/sys/dict/selectDict/1001',panelHeight:'auto'">
+					</td>
+					<td th:text="#{panel.module.model}">屏体模组型号</td>
+					<td>
+						<input class="easyui-textbox" name="panelModuleModel">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{panel.module.sn}">屏体模组序列号</td>
+					<td>
+						<input class="easyui-textbox" name="panelModuleSn">
+					</td>
+					<td th:text="#{oc.model}">玻璃型号</td>
+					<td>
+						<input class="easyui-textbox" name="ocModel">
+					</td>
+				</tr>
+				<tr>
+					<td th:text="#{oc.pcbi.sn}">玻璃序列号</td>
+					<td>
+						<input class="easyui-textbox" name="ocSn">
+					</td>
+					<td th:text="#{sold.country}">销往国家</td>
+					<td>
+						<input class="easyui-textbox" name="soldToCountry">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+	<div th:replace="panel/vendor/vendorCptView::vendorCpt" />
+</body>
+</html>

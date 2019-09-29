@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:include="x::head('非屏体工单')" />
+<script type="text/javascript">
+    $(function() {
+        $('#dg').datagrid({
+            url : 'nonpanel/qryForPage',
+            fit : true,
+            toolbar : '.dgtoolbar',
+            onSelect : function(i, r) {
+                $("#editBnt, #delBnt, #viewBnt").linkbutton('enable');
+            },
+            onLoadSuccess : function(i, r) {
+                $("#editBnt, #delBnt, #viewBnt").linkbutton('disable');
+            }
+        });
+
+        // 不良率超过1即红色字体
+        $('#frm').form({
+            onLoadSuccess : function(data) {
+                var _nonPerformingRate = data.nonPerformingRate;
+                if (_nonPerformingRate && _nonPerformingRate > 1) {
+                    $('#nonPerformingRate').textbox('textbox').css('color', 'red');
+                } else {
+                    $('#nonPerformingRate').textbox('textbox').css('color', 'black');
+                }
+            }
+        });
+
+        // 双击选择订单
+        $("#orderNo").textbox('textbox').bind("dblclick", function() {
+            $("#ww-order").orderDialog({
+                selRow : function(r) {
+                    var valArr = [ "orderNo", "custName", "brand", "deliveryForm", "movement", "custModel", "ourModel", "orderQty", "soldToCountry" ];
+                    $.each(valArr, function(i, v) {
+                        $("#frm input[textboxname='" + v + "']").textbox('setValue', r[v]);
+                    });
+                }
+            });
+        });
+    });
+
+    function add() {
+        $('#ww').editFormDialog({
+            title : '非屏体投诉单-新建',
+            dg : 'dg',
+            maximized : true,
+            disabledArr : [ "cs", "nonPerformingRate", "custName", "brand", "deliveryForm", "movement", "ourModel", "custModel", "orderQty", "soldToCountry" ],
+            bnts : [ {
+                url : 'nonpanel/add'
+            } ]
+        });
+    }
+
+    function edit() {
+        $('#frm').form('load', 'nonpanel/edit?nonPanelCptId=' + $('#dg').datagrid("getSelected").nonPanelCptId);
+        $('#ww').editFormDialog({
+            title : '非屏体投诉单-编辑',
+            dg : 'dg',
+            maximized : true,
+            disabledArr : [ "cs", "nonPerformingRate", "custName", "brand", "deliveryForm", "movement", "ourModel", "custModel", "orderQty", "soldToCountry" ],
+            bnts : [ {
+                url : 'nonpanel/update'
+            } ]
+        });
+    }
+
+    function view() {
+        var frm = $('#frm');
+        frm.form('load', 'nonpanel/edit?nonPanelCptId=' + $('#dg').datagrid("getSelected").nonPanelCptId);
+        frm.form("disable");
+
+        $('#ww').dialog({
+            title : '非屏体投诉单-查看',
+            maximized : true,
+            toolbar : null,
+            onClose : function() {
+                frm.form('reset');
+            }
+        }).dialog('center').dialog('open');
+    }
+
+    function del() {
+        $.messager.confirm(g_tip_title, '是否确认删除？', function(r) {
+            if (r) {
+                $.post('nonpanel/delete', {
+                    id : $('#dg').datagrid("getSelected").nonPanelCptId
+                }, function() {
+                    tipSuccess();
+                    $('#dg').datagrid("reload");
+                });
+            }
+        });
+    }
+
+    function doSearch() {
+        $('#qryFrmDiv').qryFormDialog({
+            dg : 'dg'
+        });
+    }
+
+    function excelExport() {
+        window.open('nonpanel/excelExport?' + $('#qryFrmDiv form').serialize());
+    }
+</script>
+
+<body>
+	<div th:replace="x::loading" />
+	<div class="dgtoolbar">
+		<shiro:hasPermission name="nonpanel:add">
+			<a class="easyui-linkbutton" data-options="iconCls:'icon-add'" onclick="add()">新建</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="nonpanel:edit">
+			<a id="editBnt" class="easyui-linkbutton" data-options="iconCls:'icon-edit'" onclick="edit()">编辑</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="nonpanel:delete">
+			<a id="delBnt" class="easyui-linkbutton" data-options="iconCls:'icon-remove'" onclick="del()">删除</a>
+		</shiro:hasPermission>
+		<a id="viewBnt" class="easyui-linkbutton" data-options="iconCls:'icon-view'" onclick="view()">查看</a>
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-search'" onclick="doSearch()">查询</a>
+		<a class="easyui-linkbutton" data-options="iconCls:'icon-download'" onclick="xlsDownload('nonpanel/xlsDownload/nonPanelCpt.xlsx')">模板下载</a>
+		<shiro:hasPermission name="nonpanel:excelImport">
+			<a class="easyui-linkbutton" data-options="iconCls:'icon-excel'" onclick="$('#excelUpload').excelUpload({url:'nonpanel/excelImport', dg:'dg'})">导入</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="nonpanel:excelExport">
+			<a class="easyui-linkbutton" data-options="iconCls:'icon-excel'" onclick="excelExport()">导出</a>
+		</shiro:hasPermission>
+	</div>
+
+	<table id="dg" border="0">
+		<thead>
+			<tr>
+				<th data-options="field:'complaintNo',width:'12%'">客诉单号</th>
+				<th data-options="field:'receiveTime',width:'15%'">反馈客服时间</th>
+				<th data-options="field:'closedTime',width:'15%'">闭环时间</th>
+				<th data-options="field:'orderNo',width:'10%'">订单号</th>
+				<th data-options="field:'movement',width:'10%'">机芯</th>
+				<th data-options="field:'rmaFailureType',width:'25%'">RMA故障现象类型</th>
+				<th data-options="field:'nonRmaFailureType',width:'25%'">非RMA故障现象类型</th>
+			</tr>
+		</thead>
+	</table>
+
+
+	<!-- 查询条件 -->
+	<div id="qryFrmDiv" class="easyui-dialog dlgForm2" data-options="height:500,closed:true">
+		<form>
+			<table class="qryTable">
+				<tr>
+					<td>客诉单号</td>
+					<td>
+						<input class="easyui-textbox" name="complaintNo">
+					</td>
+					<td>不良阶段</td>
+					<td>
+						<input class="easyui-combobox" name="badPhase" data-options="url:'console/sys/dict/selectDict/1001',panelHeight:'auto',required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>RMA故障现象类型</td>
+					<td>
+						<input class="easyui-combobox" name="rmaFailureType" data-options="url:'console/sys/dict/selectDict/1102',panelHeight:300">
+					</td>
+					<td>非RMA故障现象类型</td>
+					<td>
+						<input class="easyui-combobox" name="nonRmaFailureType" data-options="url:'console/sys/dict/selectDict/1103',panelHeight:300">
+					</td>
+				</tr>
+				<tr>
+					<td>初审意见类型</td>
+					<td>
+						<input class="easyui-combobox" name="initialType" data-options="url:'console/sys/dict/selectDict/1105',panelHeight:300">
+					</td>
+					<td>临时措施类型</td>
+					<td>
+						<input class="easyui-combobox" name="temporaryMeasureType" data-options="url:'console/sys/dict/selectDict/1107',panelHeight:300">
+					</td>
+				</tr>
+				<tr>
+					<td>确认解决方案</td>
+					<td>
+						<input class="easyui-combobox" name="confirmationSolution" data-options="url:'console/sys/dict/selectDict/1109',panelHeight:300">
+					</td>
+					<td>部件名称</td>
+					<td>
+						<input class="easyui-combobox" name="partName" data-options="url:'console/sys/dict/selectDict/1104',panelHeight:300">
+					</td>
+				</tr>
+				<tr>
+					<td>反馈客服时间(始)</td>
+					<td>
+						<input class="Wdate" id="receiveTimeStart" name="receiveTimeStart" onfocus="WdatePicker({isShowClear:true,readOnly:true,maxDate:'%y-%M-%d'})">
+					</td>
+					<td>反馈客服时间(止)</td>
+					<td>
+						<input class="Wdate" id="receiveTimeEnd" name="receiveTimeEnd" onfocus="WdatePicker({isShowClear:true,readOnly:true,minDate:'#F{$dp.$D(\'receiveTimeStart\')}',maxDate:'%y-%M-%d'})">
+					</td>
+				</tr>
+				<tr>
+					<td>闭环时间(始)</td>
+					<td>
+						<input class="Wdate" id="closedTimeStart" name="closedTimeStart" onfocus="WdatePicker({isShowClear:true,readOnly:true,maxDate:'%y-%M-%d'})">
+					</td>
+					<td>闭环时间(止)</td>
+					<td>
+						<input class="Wdate" id="closedTimeEnd" name="closedTimeEnd" onfocus="WdatePicker({isShowClear:true,readOnly:true,minDate:'#F{$dp.$D(\'closedTimeStart\')}',maxDate:'%y-%M-%d'})">
+					</td>
+				</tr>
+				<tr>
+					<td>部件物编</td>
+					<td>
+						<input class="easyui-textbox" name="componentEditing">
+					</td>
+					<td>订单号</td>
+					<td>
+						<input class="easyui-textbox" name="orderNo">
+					</td>
+				</tr>
+				<tr>
+					<td>备损订单号</td>
+					<td>
+						<input class="easyui-textbox" name="reserveLossOrder">
+					</td>
+					<td>走货方式</td>
+					<td>
+						<input class="easyui-textbox" name="deliveryForm">
+					</td>
+				</tr>
+				<tr>
+					<td>我司型号</td>
+					<td>
+						<input class="easyui-textbox" name="ourModel">
+					</td>
+					<td>买家型号</td>
+					<td>
+						<input class="easyui-textbox" name="custModel">
+					</td>
+				</tr>
+				<tr>
+					<td>客户名称</td>
+					<td>
+						<input class="easyui-textbox" name="custName">
+					</td>
+					<td>机芯</td>
+					<td>
+						<input class="easyui-textbox" name="movement">
+					</td>
+				</tr>
+				<tr>
+					<td>品牌</td>
+					<td>
+						<input class="easyui-textbox" name="brand">
+					</td>
+					<td>销往国家</td>
+					<td>
+						<input class="easyui-textbox" name="soldToCountry">
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+
+	<!-- 编辑 -->
+	<div id="ww" class="easyui-dialog maxDlgForm" data-options="closed:true">
+		<form id="frm" method="post">
+			<input type="hidden" name="nonPanelCptId">
+			<table>
+				<tr>
+					<td>客诉单号</td>
+					<td>
+						<input class="easyui-textbox" name="complaintNo" data-options="required:true">
+					</td>
+					<td>反馈客服时间</td>
+					<td>
+						<input class="easyui-datetimebox" name="receiveTime" data-options="required:true">
+					</td>
+					<td>客服专员</td>
+					<td>
+						<input class="easyui-textbox" name="cs">
+					</td>
+				</tr>
+				<tr>
+					<td>客诉来源</td>
+					<td>
+						<input class="easyui-combobox" name="src" data-options="url:'console/sys/dict/selDict/1110',panelHeight:300,required:true">
+					</td>
+					<td>部件物编</td>
+					<td>
+						<input class="easyui-textbox" name="componentEditing" data-options="required:true">
+					</td>
+					<td>部件订单量</td>
+					<td>
+						<input class="easyui-numberbox" name="partOrderQty" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>投诉数量</td>
+					<td>
+						<input class="easyui-numberbox" name="numberOfComplaints" data-options="required:true">
+					</td>
+					<td>不良率(%)</td>
+					<td>
+						<input class="easyui-textbox" id="nonPerformingRate" name="nonPerformingRate">
+					</td>
+					<td>不良阶段</td>
+					<td>
+						<input class="easyui-combobox" name="badPhase" data-options="url:'console/sys/dict/selDict/1001',panelHeight:'auto',required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>RMA故障现象类型</td>
+					<td>
+						<input class="easyui-combobox" name="rmaFailureType" data-options="url:'console/sys/dict/selDict/1102',panelHeight:300">
+					</td>
+					<td>非RMA故障现象类型</td>
+					<td>
+						<input class="easyui-combobox" name="nonRmaFailureType" data-options="url:'console/sys/dict/selDict/1103',panelHeight:300">
+					</td>
+					<td>部件名称</td>
+					<td>
+						<input class="easyui-combobox" name="partName" data-options="url:'console/sys/dict/selDict/1104',panelHeight:300,required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>元器件名称</td>
+					<td>
+						<input class="easyui-textbox" name="componentName">
+					</td>
+					<td>初审意见类型</td>
+					<td>
+						<input class="easyui-combobox" name="initialType" data-options="url:'console/sys/dict/selDict/1105',panelHeight:300,required:true">
+					</td>
+					<td>初审意见时间</td>
+					<td>
+						<input class="easyui-datetimebox" name="initialResponseTime" data-options="required:true">
+					</td>
+				</tr>
+				<tr>
+					<td>故障现象描述</td>
+					<td colspan="5">
+						<input class="easyui-textbox" style="width: 90%" name="faultremark">
+					</td>
+				</tr>
+				<tr>
+					<td colspan="6">
+						<fieldset>
+							<legend>解决方案</legend>
+							<table>
+								<tr>
+									<td>备损订单号</td>
+									<td>
+										<input class="easyui-textbox" name="reserveLossOrder">
+									</td>
+									<td>备损订单金额($)</td>
+									<td>
+										<input class="easyui-numberbox" name="reserveLossAmount" data-options="min:0,precision:2">
+									</td>
+									<td>备损出货方式</td>
+									<td>
+										<input class="easyui-combobox" name="damageLossShipping" data-options="url:'console/sys/dict/selDict/1108',panelHeight:'auto'">
+									</td>
+								</tr>
+								<tr>
+									<td>追溯单号</td>
+									<td>
+										<input class="easyui-textbox" name="trackingNumber">
+									</td>
+									<td>维修费用($)</td>
+									<td>
+										<input class="easyui-numberbox" name="repairFees" data-options="min:0,precision:2">
+									</td>
+									<td>赔偿费用($)</td>
+									<td>
+										<input class="easyui-numberbox" name="compensationFee" data-options="min:0,precision:2">
+									</td>
+								</tr>
+								<tr>
+									<td>确认解决方案</td>
+									<td colspan="3">
+										<input class="easyui-combobox" style="width: 90%" name="confirmationSolution" data-options="url:'console/sys/dict/selectDict/1109',panelHeight:300">
+									</td>
+									<td>确认解决方案时间</td>
+									<td>
+										<input class="easyui-datetimebox" name="confirmSolutionTime">
+									</td>
+								</tr>
+								<tr>
+									<td>临时措施类型</td>
+									<td colspan="3">
+										<input class="easyui-combobox" style="width: 90%" name="temporaryMeasureType" data-options="url:'console/sys/dict/selectDict/1107',panelHeight:300">
+									</td>
+								</tr>
+								<tr>
+									<td>临时措施描述</td>
+									<td colspan="3">
+										<input class="easyui-textbox" style="width: 90%" name="temporaryMeasuresremark">
+									</td>
+								</tr>
+							</table>
+						</fieldset>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="6">
+						<fieldset>
+							<legend>质量文件信息</legend>
+							<table>
+								<tr>
+									<td>质量文件反馈时间</td>
+									<td>
+										<input class="easyui-datetimebox" name="qualityFileFeedbackTime">
+									</td>
+									<td>质量文件接收人</td>
+									<td>
+										<input class="easyui-textbox" name="qualitydocRecipient">
+									</td>
+									<td>8D报告接收时间</td>
+									<td>
+										<input class="easyui-datetimebox" name="reportReceivingTime">
+									</td>
+								</tr>
+								<tr>
+									<td>8D报告转发技术组时间</td>
+									<td>
+										<input class="easyui-datetimebox" name="reportForwardingTime">
+									</td>
+									<td>技术组回复审核意见时间</td>
+									<td>
+										<input class="easyui-datetimebox" name="technicalRespondedTime">
+									</td>
+									<td>8D报告回复客户时间</td>
+									<td>
+										<input class="easyui-datetimebox" name="reportRespondsTime">
+									</td>
+								</tr>
+							</table>
+						</fieldset>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="6">
+						<fieldset>
+							<legend>闭环信息</legend>
+							<table>
+								<tr>
+									<td>投诉闭环措施</td>
+									<td>
+										<input class="easyui-textbox" name="closedRemark">
+									</td>
+									<td>投诉闭环时间</td>
+									<td>
+										<input class="easyui-datetimebox" name="closedTime">
+									</td>
+									<td>预计完成时间</td>
+									<td>
+										<input class="easyui-datetimebox" name="estimatedFinishTime">
+									</td>
+								</tr>
+								<tr>
+									<td>首要待办事项类型</td>
+									<td colspan="5">
+										<input class="easyui-textbox" style="width: 90%" name="primaryToDotype">
+									</td>
+								</tr>
+							</table>
+						</fieldset>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="6">
+						<fieldset>
+							<legend>订单信息</legend>
+							<table>
+								<tr>
+									<td>订单号</td>
+									<td>
+										<input class="easyui-textbox" id="orderNo" name="orderNo" data-options="required:true,readonly:true,prompt:'双击选择'">
+									</td>
+									<td>客户名称</td>
+									<td>
+										<input class="easyui-textbox" name="custName">
+									</td>
+									<td>品牌</td>
+									<td>
+										<input class="easyui-textbox" name="brand">
+									</td>
+								</tr>
+								<tr>
+									<td>走货方式</td>
+									<td>
+										<input class="easyui-textbox" name="deliveryForm">
+									</td>
+									<td>机芯</td>
+									<td>
+										<input class="easyui-textbox" name="movement">
+									</td>
+									<td>我司型号</td>
+									<td>
+										<input class="easyui-textbox" name="ourModel">
+									</td>
+								</tr>
+								<tr>
+									<td>买家型号</td>
+									<td>
+										<input class="easyui-textbox" name="custModel">
+									</td>
+									<td>订单量</td>
+									<td>
+										<input class="easyui-textbox" name="orderQty">
+									</td>
+									<td>销往国家</td>
+									<td>
+										<input class="easyui-textbox" name="soldToCountry">
+									</td>
+								</tr>
+							</table>
+						</fieldset>
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+	<div th:replace="x::order" />
+	<div id="excelUpload" />
+</body>
+</html>

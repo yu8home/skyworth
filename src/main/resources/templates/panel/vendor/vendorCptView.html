@@ -1,0 +1,165 @@
+<div th:fragment="vendorCpt" id="vendorCptView" class="easyui-dialog" data-options="closed:true">
+	<div class="easyui-tabs" data-options="fit:true">
+		<div th:title="#{tab.baseInfo}">
+			<form id="frmView">
+				<input type="hidden" name="complaintId">
+				<input type="hidden" name="status">
+				<input type="hidden" name="orderId">
+				<table class="maxDlgForm">
+					<tr>
+						<td th:text="#{complaintNo}">客诉单号</td>
+						<td>
+							<input class="easyui-textbox" name="complaintNo">
+						</td>
+						<td th:text="#{feedback.supplier.time}">反馈供应商时间</td>
+						<td>
+							<input class="easyui-textbox" name="feedbackSupplierTime">
+						</td>
+						<td th:text="#{sold.country}">销往国家</td>
+						<td>
+							<input class="easyui-textbox" name="soldToCountry" data-options="disabled:true">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{cbu.sn}">整机序列号</td>
+						<td>
+							<input class="easyui-textbox" name="cbuSn">
+						</td>
+						<td th:text="#{bad.phase}">不良阶段</td>
+						<td>
+							<input class="easyui-textbox" name="badPhase">
+						</td>
+						<td th:text="#{status}">状态</td>
+						<td>
+							<input class="easyui-textbox" name="statusName">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{part.name}">部件名称</td>
+						<td>
+							<input class="easyui-textbox" name="partName">
+						</td>
+						<td th:text="#{phenomenon.type}">故障现象类型</td>
+						<td colspan="3">
+							<input class="easyui-textbox" style="width: 83%" name="failureType">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{panel.module.model}">屏体模组型号</td>
+						<td>
+							<input class="easyui-textbox" name="panelModuleModel">
+						</td>
+						<td th:text="#{panel.module.sn}">屏体模组序列号</td>
+						<td colspan="3">
+							<input class="easyui-textbox" style="width: 83%" name="panelModuleSn">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{oc.model}">玻璃型号</td>
+						<td>
+							<input class="easyui-textbox" name="ocModel">
+						</td>
+						<td th:text="#{oc.pcbi.sn}">玻璃序列号</td>
+						<td colspan="3">
+							<input class="easyui-textbox" style="width: 83%" name="ocSn">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{phenomenon.desc}">故障现象描述</td>
+						<td colspan="5">
+							<input class="easyui-textbox" style="width: 90%" name="failureRemark">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{mura.test.result}">对调试验/MURA测试结果</td>
+						<td colspan="5">
+							<input class="easyui-textbox" style="width: 90%" name="exchangeTestRs">
+						</td>
+					</tr>
+					<tr>
+						<td th:text="#{other.checking.result}">其它试验方法/结果</td>
+						<td colspan="5">
+							<input class="easyui-textbox" style="width: 90%" name="otherCheckRs">
+						</td>
+					</tr>
+				</table>
+				<table class="tabImg">
+					<input type="hidden" name="cbuSnImg1">
+					<input type="hidden" name="cbuSnImg2">
+					<input type="hidden" name="cbuSnImg3">
+					<input type="hidden" name="badPhenImg1">
+					<input type="hidden" name="badPhenImg2">
+					<input type="hidden" name="badPhenImg3">
+					<input type="hidden" name="panelModuleSnImg1">
+					<input type="hidden" name="panelModuleSnImg2">
+					<input type="hidden" name="panelModuleSnImg3">
+					<input type="hidden" name="ocSnImg1">
+					<input type="hidden" name="ocSnImg2">
+					<input type="hidden" name="ocSnImg3">
+					<input type="hidden" name="screenFacPackingImg1">
+					<input type="hidden" name="screenFacPackingImg2">
+					<input type="hidden" name="screenFacPackingImg3">
+					<input type="hidden" name="outsidePackingImg1">
+					<input type="hidden" name="outsidePackingImg2">
+					<input type="hidden" name="outsidePackingImg3">
+					<input type="hidden" name="insidePackingImg1">
+					<input type="hidden" name="insidePackingImg2">
+					<input type="hidden" name="insidePackingImg3">
+					<tr style="height: 35px;">
+						<td name="h_cbuSnImg" style="width: 14%;" th:text="#{cbu.sn}">整机序列号</td>
+						<td name="h_badPhenImg" style="width: 14%;" th:text="#{phenomenon.pic}">现象图片</td>
+						<td name="h_panelModuleSnImg" style="width: 14%;" th:text="#{panel.module.sn}">屏体模组序列号</td>
+						<td name="h_ocSnImg" style="width: 14%;" th:text="#{oc.pcbi.sn}">玻璃序列号</td>
+						<td name="h_screenFacPackingImg" style="width: 14%;" th:text="#{carton.label}">屏厂包装箱贴纸</td>
+						<td name="h_outsidePackingImg" style="width: 15%;" th:text="#{packingBox.outside.status}">包装箱外部状态</td>
+						<td name="h_insidePackingImg" style="width: 15%;" th:text="#{packingBox.inside.status}">包装箱内部状态</td>
+					</tr>
+					<tr style="height: 100px;">
+						<td id="cbuSnImg1"></td>
+						<td id="badPhenImg1"></td>
+						<td id="panelModuleSnImg1"></td>
+						<td id="ocSnImg1"></td>
+						<td id="screenFacPackingImg1"></td>
+						<td id="outsidePackingImg1"></td>
+						<td id="insidePackingImg1"></td>
+					</tr>
+					<tr style="height: 100px;">
+						<td id="cbuSnImg2"></td>
+						<td id="badPhenImg2"></td>
+						<td id="panelModuleSnImg2"></td>
+						<td id="ocSnImg2"></td>
+						<td id="screenFacPackingImg2"></td>
+						<td id="outsidePackingImg2"></td>
+						<td id="insidePackingImg2"></td>
+					</tr>
+					<tr style="height: 100px;">
+						<td id="cbuSnImg3"></td>
+						<td id="badPhenImg3"></td>
+						<td id="panelModuleSnImg3"></td>
+						<td id="ocSnImg3"></td>
+						<td id="screenFacPackingImg3"></td>
+						<td id="outsidePackingImg3"></td>
+						<td id="insidePackingImg3"></td>
+					</tr>
+				</table>
+			</form>
+		</div>
+
+		<div th:title="#{tab.suplier}">
+			<table id="dg-suplier" border="0" class="easyui-datagrid" data-options="pagination:false,fit:true">
+				<thead>
+					<tr>
+						<th data-options="field:'vendor_code',width:'30%'" th:text="#{suplier}" />
+						<th data-options="field:'start_time',width:'15%'" th:text="#{validtime.start}" />
+						<th data-options="field:'end_time',width:'15%'" th:text="#{validtime.end}" />
+						<th data-options="field:'remark',width:'40%'" th:text="#{remark}" />
+					</tr>
+				</thead>
+			</table>
+		</div>
+
+		<div th:replace="x::suplierConfirmLog" />
+	</div>
+
+	<div id="imgDialog" />
+</div>

@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.neusoft.biz.archives.cust.dao.CustMapper">
+
+	<sql id="Base_Column_List">
+		<![CDATA[
+			select t.cust_code,
+			       t.cust_name,
+			       t.brand,
+			       t.sale_name,
+			       t.warranty_period,
+			       t.link_man,
+			       t.link_email,
+			       t.country,
+			       t.customer_members,
+			       t.belong_end,
+			       t.is_valid,
+			       (select concat(b.cust_serv_name, '(', b.cust_serv_code, ')')
+			          from b_cs_2_cust a, b_cs b
+			         where a.cust_serv_code = b.cust_serv_code
+			           and a.user_code = t.cust_code) as custservname
+			  from b_customer t
+		]]>
+	</sql>
+
+	<select id="qryForList" resultType="cust">
+		<include refid="Base_Column_List" />
+		<where>
+			<if test="custCode != null and custCode != ''"> t.cust_code like concat('%', #{custCode}, '%') </if>
+			<if test="custName != null and custName != ''"> t.cust_name like concat('%', #{custName}, '%') </if>
+			<if test="brand != null and brand != ''"> t.brand like concat('%', #{brand}, '%') </if>
+			<if test="country != null and country != ''"> t.country like concat('%', #{country}, '%') </if>
+		</where>
+		order by t.cust_code desc
+	</select>
+
+	<select id="getInfo" resultType="cust">
+		<include refid="Base_Column_List" />
+		where t.cust_code = #{custCode}
+	</select>
+
+	<insert id="insert">
+		<![CDATA[
+			insert into b_customer
+			  (cust_code,
+			   cust_name,
+			   brand,
+			   sale_name,
+			   warranty_period,
+			   link_man,
+			   link_email,
+			   country,
+			   customer_members,
+			   belong_end,
+			   is_valid)
+			values
+			  (#{custCode},
+			   #{custName},
+			   #{brand},
+			   #{saleName},
+			   #{warrantyPeriod},
+			   #{linkMan},
+			   #{linkEmail},
+			   #{country},
+			   #{customerMembers},
+			   #{belongEnd},
+			   #{isValid})
+		]]>
+	</insert>
+
+	<update id="update">
+		<![CDATA[
+			update b_customer
+			   set cust_name       = #{custName},
+			       brand           = #{brand},
+			       sale_name       = #{saleName},
+			       warranty_period = #{warrantyPeriod},
+			       link_man        = #{linkMan},
+			       link_email      = #{linkEmail},
+			       country         = #{country},
+			       customer_members= #{customerMembers},
+			       belong_end      = #{belongEnd},
+			       is_valid        = #{isValid}
+			 where cust_code = #{custCode};
+			 
+			 update s_user t set t.name = #{custName}, t.is_valid = #{isValid} where t.user_code = #{custCode};
+		]]>
+	</update>
+
+
+	<delete id="delete">
+		delete from s_user_role where user_id = (select t.user_id from s_user t where t.user_code = #{custCode});
+		delete from s_user where user_code = #{custCode};
+		delete from b_cs_2_cust where user_code = #{custCode};
+		delete from b_customer where cust_code = #{custCode};
+	</delete>
+
+
+	<update id="copyUser">
+		<![CDATA[
+			insert into b_customer
+			  (cust_code,
+			   cust_name,
+			   brand,
+			   sale_name,
+			   warranty_period,
+			   link_man,
+			   link_email,
+			   country,
+			   customer_members,
+			   belong_end,
+			   is_valid)
+			  select #{newCustCode},
+			         t.cust_name,
+			         t.brand,
+			         t.sale_name,
+			         t.warranty_period,
+			         t.link_man,
+			         t.link_email,
+			         t.country,
+			         t.customer_members,
+			         t.belong_end,
+			         t.is_valid
+			    from b_customer t
+			   where t.cust_code = #{oldCustCode};
+			
+			insert into b_cs_2_cust
+			  (cust_serv_code, user_code)
+			  select t.cust_serv_code, #{newCustCode}
+			    from b_cs_2_cust t
+			   where t.user_code = #{oldCustCode};
+			
+			insert into s_user
+			  (user_code, name, password, user_type, role_type, is_valid)
+			  select #{newCustCode},
+			         t.name,
+			         #{pwd},
+			         t.user_type,
+			         t.role_type,
+			         t.is_valid
+			    from s_user t
+			   where t.user_code = #{oldCustCode};
+			
+			insert into s_user_role
+			  (user_id, role_id)
+			  select a.user_id, c.role_id
+			    from s_user a, s_user b, s_user_role c
+			   where a.user_code = #{newCustCode}
+			     and b.user_id = c.user_id
+			     and b.user_code = #{oldCustCode};
+		]]>
+	</update>
+
+</mapper>
