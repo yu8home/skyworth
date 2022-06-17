@@ -22,7 +22,7 @@
 		<pagehelper-sbs>1.2.12</pagehelper-sbs>
 		<shiro-spring.version>1.4.1</shiro-spring.version>
 		<shiro-ehcache.version>1.4.1</shiro-ehcache.version>
-		<fastjson.version>1.2.56</fastjson.version>
+		<fastjson.version>1.2.83</fastjson.version>
 		<jsoup.version>1.12.1</jsoup.version>
 		<poi-ooxml.version>4.1.0</poi-ooxml.version>
 		<hutool-all.version>4.5.16</hutool-all.version>
